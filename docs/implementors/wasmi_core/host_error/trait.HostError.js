@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["radix_engine"] = [{"text":"impl HostError for <a class=\"enum\" href=\"radix_engine/errors/enum.RuntimeError.html\" title=\"enum radix_engine::errors::RuntimeError\">RuntimeError</a>","synthetic":false,"types":["radix_engine::errors::RuntimeError"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

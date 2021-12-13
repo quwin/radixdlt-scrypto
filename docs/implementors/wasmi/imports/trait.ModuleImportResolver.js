@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["radix_engine"] = [{"text":"impl ModuleImportResolver for <a class=\"struct\" href=\"radix_engine/engine/struct.EnvModuleResolver.html\" title=\"struct radix_engine::engine::EnvModuleResolver\">EnvModuleResolver</a>","synthetic":false,"types":["radix_engine::engine::wasm_env::EnvModuleResolver"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

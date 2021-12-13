@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["radix_engine"] = [{"text":"impl&lt;'r, 'l, L:&nbsp;<a class=\"trait\" href=\"radix_engine/ledger/trait.SubstateStore.html\" title=\"trait radix_engine::ledger::SubstateStore\">SubstateStore</a>&gt; Externals for <a class=\"struct\" href=\"radix_engine/engine/struct.Process.html\" title=\"struct radix_engine::engine::Process\">Process</a>&lt;'r, 'l, L&gt;","synthetic":false,"types":["radix_engine::engine::process::Process"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

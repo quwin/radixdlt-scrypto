@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["RuntimeError","Represents an error when executing a transaction."],["TransactionValidationError","Represents an error when validating a transaction."],["WasmValidationError","Represents an error when validating a WASM file."],["WasmiError","Error coming from WASMI module which maps to wasmi:Error but is cloneable"]]});

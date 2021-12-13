@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["InMemorySubstateStore","An in-memory ledger stores all substates in host memory."],["Substate",""],["SubstateIdGenerator",""]],"trait":[["QueryableSubstateStore",""],["SubstateStore","A ledger stores all transactions and substates."]]});

@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["scrypto"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.60.0/core/iter/traits/accum/trait.Sum.html\" title=\"trait core::iter::traits::accum::Sum\">Sum</a>&lt;<a class=\"struct\" href=\"scrypto/engine/types/struct.Decimal.html\" title=\"struct scrypto::engine::types::Decimal\">Decimal</a>&gt; for <a class=\"struct\" href=\"scrypto/engine/types/struct.Decimal.html\" title=\"struct scrypto::engine::types::Decimal\">Decimal</a>","synthetic":false,"types":["scrypto::math::decimal::Decimal"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

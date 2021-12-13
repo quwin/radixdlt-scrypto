@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Mutability","Whether a method is going to change the component state."]],"struct":[["Blueprint","Represents a blueprint."],["Function","Represents a function."],["Method","Represents a method."]]});

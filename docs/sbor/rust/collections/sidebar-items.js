@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BTreeMap","An ordered map based on a B-Tree."],["BTreeSet","An ordered set based on a B-Tree."],["HashMap","A hash map implemented with quadratic probing and SIMD lookup."],["HashSet","A hash set implemented as a `HashMap` where the value is `()`."]]});

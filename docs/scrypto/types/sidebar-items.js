@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ScryptoType","Scrypto types are special types that are Scrypto specific and may require special interpretation."]]});

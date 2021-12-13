@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sbor"] = [{"text":"impl <a class=\"trait\" href=\"sbor/rust/convert/trait.From.html\" title=\"trait sbor::rust::convert::From\">From</a>&lt;<a class=\"struct\" href=\"sbor/path/struct.MutableSborPath.html\" title=\"struct sbor::path::MutableSborPath\">MutableSborPath</a>&gt; for <a class=\"struct\" href=\"sbor/path/struct.SborPath.html\" title=\"struct sbor::path::SborPath\">SborPath</a>","synthetic":false,"types":["sbor::path::SborPath"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

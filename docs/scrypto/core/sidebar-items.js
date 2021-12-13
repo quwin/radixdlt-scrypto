@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Level","Represents the level of a log message."],["SNodeRef",""],["ScryptoActor",""]],"struct":[["Logger","A utility for logging messages."],["Runtime","The transaction runtime."],["ScryptoActorInfo","Represents the running entity."]]});

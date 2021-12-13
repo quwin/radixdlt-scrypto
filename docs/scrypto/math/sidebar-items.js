@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ParseDecimalError","Represents an error when parsing Decimal from hex string."],["RoundingMode","Defines how rounding should be done."]],"macro":[["dec","Creates a `Decimal` from literals."]],"struct":[["Decimal","`Decimal` represents a 128 bit representation of a fixed-scale decimal number."]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["ACCOUNT_PACKAGE","The package of the account blueprint."],["ECDSA_TOKEN","The ECDSA virtual resource address."],["RADIX_TOKEN","The XRD resource address."],["SYSTEM_COMPONENT","The system component"],["SYSTEM_PACKAGE","The package of the system blueprint."]]});
