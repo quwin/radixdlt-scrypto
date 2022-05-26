@@ -1052,7 +1052,7 @@ mod tests {
         ];
         let package = Package {
             code,
-            blueprints: HashMap::new(),
+            blueprint_abis: HashMap::new(),
         };
         let encoded_package = scrypto_encode(&package);
 

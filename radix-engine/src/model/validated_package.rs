@@ -2,7 +2,7 @@ use sbor::rust::collections::HashMap;
 use sbor::rust::string::String;
 use sbor::rust::vec::Vec;
 use sbor::*;
-use scrypto::abi::{Function, Method};
+use scrypto::abi::BlueprintAbi;
 use scrypto::buffer::scrypto_decode;
 use scrypto::component::PackageFunction;
 use scrypto::values::ScryptoValue;
@@ -15,7 +15,7 @@ use crate::wasm::*;
 pub struct ValidatedPackage {
     code: Vec<u8>,
     instrumented_code: Vec<u8>,
-    blueprint_abis: HashMap<String, (Type, Vec<Function>, Vec<Method>)>,
+    blueprint_abis: HashMap<String, BlueprintAbi>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,8 +39,8 @@ impl ValidatedPackage {
 
         Ok(Self {
             code: package.code,
+            blueprint_abis: package.blueprint_abis,
             instrumented_code,
-            blueprint_abis: package.blueprints,
         })
     }
 
@@ -55,7 +55,7 @@ impl ValidatedPackage {
     pub fn blueprint_abi(
         &self,
         blueprint_name: &str,
-    ) -> Option<&(Type, Vec<Function>, Vec<Method>)> {
+    ) -> Option<&BlueprintAbi> {
         self.blueprint_abis.get(blueprint_name)
     }
 
@@ -65,7 +65,7 @@ impl ValidatedPackage {
 
     pub fn load_blueprint_schema(&self, blueprint_name: &str) -> Result<&Type, PackageError> {
         self.blueprint_abi(blueprint_name)
-            .map(|v| &v.0)
+            .map(|v| &v.value_schema)
             .ok_or(PackageError::BlueprintNotFound)
     }
 

@@ -28,7 +28,7 @@ fn missing_memory_should_cause_error() {
     );
     let package = Package {
         code,
-        blueprints: HashMap::new(),
+        blueprint_abis: HashMap::new(),
     };
     let transaction = test_runner
         .new_transaction_builder()

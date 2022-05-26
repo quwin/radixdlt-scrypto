@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sbor::Type;
-use scrypto::abi;
+use scrypto::abi::BlueprintAbi;
 use scrypto::buffer::*;
 use scrypto::prelude::*;
 use serde::Serialize;
@@ -42,109 +41,67 @@ fn assert_json_eq<T: Serialize>(actual: T, expected: Value) {
 #[test]
 fn test_simple_abi() {
     let ptr = Simple_abi(core::ptr::null_mut::<u8>());
-    let abi: (Type, Vec<abi::Function>, Vec<abi::Method>) =
-        scrypto_consume(ptr, |slice| scrypto_decode(slice).unwrap());
-
+    let abi: BlueprintAbi = scrypto_consume(ptr, |slice| scrypto_decode(slice).unwrap());
     assert_json_eq(
         abi,
-        json!([
+        json!(
             {
-                "fields":{
-                    "named":[
-                        [
-                            "state",
-                            { "type":"U32" }
-                        ]
-                    ],
-                    "type":"Named"
-                },
-                "name":"Simple",
-                "type":"Struct"
-            },
-            [
-                {
-                    "name": "new",
-                    "inputs": [],
-                    "output": {
-                        "type": "Custom",
-                        "name": "ComponentAddress",
-                        "generics": []
-                    }
-                },
-                {
-                    "name": "custom_types",
-                    "inputs": [],
-                    "output": {
-                        "type": "Tuple",
-                        "elements": [
-                            {
-                                "type": "Custom",
-                                "name": "Decimal",
-                                "generics": []
-                            },
-                            {
-                                "type": "Custom",
-                                "name": "PackageAddress",
-                                "generics": []
-                            },
-                            {
-                                "type": "Custom",
-                                "name": "LazyMap",
-                                "generics": [
-                                    {
-                                        "type": "String"
-                                    },
-                                    {
-                                        "type": "String"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Custom",
-                                "name":  "Hash",
-                                "generics": []
-                            },
-                            {
-                                "type": "Custom",
-                                "name": "Bucket",
-                                "generics": []
-                            },
-                            {
-                                "type": "Custom",
-                                "name": "Proof",
-                                "generics": []
-                            },
-                            {
-                                "type": "Custom",
-                                "name": "Vault",
-                                "generics": []
-                            }
+                "value_schema": {
+                    "type": "Struct",
+                    "name": "Simple",
+                    "fields": {
+                        "type": "Named",
+                        "named": [
+                            [ "state", {"type":"U32"} ]
                         ]
                     }
-                }
-            ],
-            [
-                {
-                    "name": "get_state",
-                    "mutability": "Immutable",
-                    "inputs": [],
-                    "output": {
-                        "type": "U32"
-                    }
                 },
-                {
-                    "name": "set_state",
-                    "mutability": "Mutable",
-                    "inputs": [
-                        {
-                            "type": "U32"
+                "functions": [
+                    {
+                        "name": "new",
+                        "inputs":[],
+                        "output":{
+                            "type":"Custom",
+                            "name":"ComponentAddress",
+                            "generics":[]
                         }
-                    ],
-                    "output": {
-                        "type": "Unit"
-                    }
-                }
-            ]
-        ]),
+                    },
+                    {
+                        "name":"custom_types",
+                        "inputs":[],
+                        "output":{
+                            "type":"Tuple",
+                            "elements":[
+                                {"type":"Custom",
+                                    "name":"Decimal",
+                                    "generics":[]
+                                },
+                                {
+                                    "type": "Custom",
+                                    "name":"PackageAddress",
+                                    "generics":[]
+                                },
+                                {
+                                    "type":"Custom",
+                                    "name":"LazyMap",
+                                    "generics":[
+                                        { "type":"String" },
+                                        {"type":"String"}
+                                    ]
+                                },
+                                {"type":"Custom","name":"Hash","generics":[]
+                                },{"type":"Custom","name":"Bucket","generics":[]
+                                },{"type":"Custom","name":"Proof","generics":[]
+                                },{"type":"Custom","name":"Vault","generics":[]}
+                            ]
+                        }
+                    },
+                ],
+                "methods":[
+                    {"name":"get_state","mutability":"Immutable","inputs":[],"output":{"type":"U32"}},
+                    {"name":"set_state","mutability":"Mutable","inputs":[{"type":"U32"}],"output":{"type":"Unit"}}
+                ]
+            }
+        )
     );
 }
