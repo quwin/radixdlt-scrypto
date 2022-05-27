@@ -24,6 +24,7 @@ pub struct Blueprint {
 #[derive(Debug, Clone, TypeId, Encode, Decode)]
 pub struct BlueprintAbi {
     pub value_schema: Type,
+    pub method_input_schema: Type,
     pub functions: Vec<Function>,
     pub methods: Vec<Method>,
 }

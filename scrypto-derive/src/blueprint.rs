@@ -120,8 +120,10 @@ pub fn handle_blueprint(input: TokenStream) -> Result<TokenStream> {
             let functions: Vec<Function> = vec![ #(#abi_functions),* ];
             let methods: Vec<Method> = vec![ #(#abi_methods),* ];
             let value_schema: Type = blueprint::#bp_ident::describe();
+            let method_input_schema = #method_enum_ident::describe();
             let output = BlueprintAbi {
                 value_schema,
+                method_input_schema,
                 functions,
                 methods,
             };
@@ -599,8 +601,10 @@ mod tests {
                         output: <u32>::describe(),
                     }];
                     let value_schema: Type = blueprint::Test::describe();
+                    let method_input_schema = TestMethod::describe();
                     let output = BlueprintAbi {
                         value_schema,
+                        method_input_schema,
                         functions,
                         methods,
                     };
@@ -681,8 +685,10 @@ mod tests {
                     let functions: Vec<Function> = vec![];
                     let methods: Vec<Method> = vec![];
                     let value_schema: Type = blueprint::Test::describe();
+                    let method_input_schema = TestMethod::describe();
                     let output = BlueprintAbi {
                         value_schema,
+                        method_input_schema,
                         functions,
                         methods,
                     };

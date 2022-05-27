@@ -56,6 +56,15 @@ fn test_simple_abi() {
                         ]
                     }
                 },
+                "method_input_schema": {
+                    "type":"Enum",
+                    "name":"SimpleMethod",
+                    "variants":[
+                        {"name":"new","fields":{"type":"Unnamed","unnamed":[]}},
+                        {"name":"get_state","fields":{"type":"Unnamed","unnamed":[]}},
+                        {"name":"set_state","fields":{"type":"Unnamed","unnamed":[{"type":"U32"}]}},
+                        {"name":"custom_types","fields":{"type":"Unnamed","unnamed":[]}}]
+                },
                 "functions": [
                     {
                         "name": "new",

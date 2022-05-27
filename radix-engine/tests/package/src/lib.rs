@@ -30,6 +30,7 @@ pub extern "C" fn LargeReturnSize_abi(_input: *mut u8) -> *mut u8 {
     };
     let abi = BlueprintAbi {
         value_schema,
+        method_input_schema: Type::Unit,
         methods: vec![],
         functions: vec![],
     };
@@ -44,6 +45,7 @@ pub extern "C" fn MaxReturnSize_abi(_input: *mut u8) -> *mut u8 {
     };
     let abi = BlueprintAbi {
         value_schema,
+        method_input_schema: Type::Unit,
         methods: vec![],
         functions: vec![],
     };
@@ -58,6 +60,7 @@ pub extern "C" fn ZeroReturnSize_abi(_input: *mut u8) -> *mut u8 {
     };
     let abi = BlueprintAbi {
         value_schema,
+        method_input_schema: Type::Unit,
         methods: vec![],
         functions: vec![],
     };
