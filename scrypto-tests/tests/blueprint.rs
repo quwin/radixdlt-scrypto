@@ -98,8 +98,8 @@ fn test_simple_abi() {
                     },
                 ],
                 "methods":[
-                    {"name":"get_state","mutability":"Immutable","inputs":[],"output":{"type":"U32"}},
-                    {"name":"set_state","mutability":"Mutable","inputs":[{"type":"U32"}],"output":{"type":"Unit"}}
+                    {"name":"get_state","inputs":[],"output":{"type":"U32"}},
+                    {"name":"set_state","inputs":[{"type":"U32"}],"output":{"type":"Unit"}}
                 ]
             }
         )

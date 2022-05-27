@@ -42,7 +42,6 @@ pub struct Function {
 #[derive(Debug, Clone, TypeId, Encode, Decode)]
 pub struct Method {
     pub name: String,
-    pub mutability: Mutability,
     pub inputs: Vec<Type>,
     pub output: Type,
 }

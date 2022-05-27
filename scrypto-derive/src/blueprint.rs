@@ -350,7 +350,6 @@ fn generate_abi(bp_ident: &Ident, items: &[ImplItem]) -> Result<(Vec<Expr>, Vec<
                         methods.push(parse_quote! {
                             ::scrypto::abi::Method {
                                 name: #name.to_owned(),
-                                mutability: #mutability,
                                 inputs: vec![#(#inputs),*],
                                 output: #output,
                             }
@@ -596,7 +595,6 @@ mod tests {
                     }];
                     let methods: Vec<Method> = vec![::scrypto::abi::Method {
                         name: "x".to_owned(),
-                        mutability: ::scrypto::abi::Mutability::Immutable,
                         inputs: vec![<u32>::describe()],
                         output: <u32>::describe(),
                     }];
