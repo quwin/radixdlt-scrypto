@@ -28,8 +28,7 @@ pub fn export_abi<S: ReadableSubstateStore>(
     Ok(abi::Blueprint {
         package_address: package_address.to_string(),
         blueprint_name: blueprint_name.to_owned(),
-        functions: abi.functions.clone(),
-        methods: abi.methods.clone(),
+        abi: abi.clone(),
     })
 }
 

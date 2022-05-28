@@ -316,6 +316,7 @@ impl TransactionBuilder {
         blueprint_abi: &abi::Blueprint,
     ) -> Result<&mut Self, CallWithAbiError> {
         let abi = blueprint_abi
+            .abi
             .functions
             .iter()
             .find(|f| f.name == function)
@@ -374,6 +375,7 @@ impl TransactionBuilder {
         blueprint_abi: &abi::Blueprint,
     ) -> Result<&mut Self, CallWithAbiError> {
         let abi = blueprint_abi
+            .abi
             .methods
             .iter()
             .find(|m| m.name == method)
