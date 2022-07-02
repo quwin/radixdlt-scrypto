@@ -1,6 +1,7 @@
 // Ideally, only the types listed below can be used by Radix Engine.
 // We need a better strategy to enforce this.
 
+use crate::buffer::scrypto_encode;
 pub use crate::component::ComponentAddress;
 pub use crate::component::PackageAddress;
 pub use crate::core::Level;
@@ -14,6 +15,7 @@ pub use crate::resource::NonFungibleAddress;
 pub use crate::resource::NonFungibleId;
 pub use crate::resource::ResourceAddress;
 pub use crate::resource::ResourceType;
+pub use crate::sbor::rust::vec::Vec;
 pub use crate::sbor::*;
 
 pub type KeyValueStoreId = (Hash, u32);
@@ -31,6 +33,16 @@ pub enum ValueId {
     Resource(ResourceAddress),
     NonFungibles(ResourceAddress),
     Package(PackageAddress),
+}
+
+impl ValueId {
+    pub fn encode_address(&self) -> Vec<u8> {
+        match self {
+            ValueId::KeyValueStore(kv_store_id) => scrypto_encode(kv_store_id),
+            ValueId::Component(component_address) => scrypto_encode(component_address),
+            _ => panic!("invalid address")
+        }
+    }
 }
 
 impl Into<(Hash, u32)> for ValueId {

@@ -4,6 +4,7 @@ use sbor::rust::format;
 use sbor::rust::ops::RangeFull;
 use sbor::rust::string::String;
 use sbor::rust::vec::Vec;
+use sbor::rust::vec;
 use sbor::*;
 use scrypto::buffer::scrypto_decode;
 use scrypto::buffer::scrypto_encode;
@@ -92,9 +93,10 @@ pub enum Address {
     GlobalComponent(ComponentAddress),
     Package(PackageAddress),
     NonFungibleSet(ResourceAddress),
-    KeyValueStore(ComponentAddress, KeyValueStoreId),
-    Vault(ComponentAddress, VaultId),
-    LocalComponent(ComponentAddress, ComponentAddress),
+
+    KeyValueStore(Vec<ValueId>, KeyValueStoreId),
+    Vault(Vec<ValueId>, VaultId),
+    LocalComponent(Vec<ValueId>, ComponentAddress),
 }
 
 #[derive(Debug)]
@@ -123,24 +125,57 @@ impl Address {
             Address::Resource(resource_address) => scrypto_encode(resource_address),
             Address::GlobalComponent(component_address) => scrypto_encode(component_address),
             Address::Package(package_address) => scrypto_encode(package_address),
-            Address::Vault(component_address, vault_id) => {
-                let mut vault_address = scrypto_encode(component_address);
-                vault_address.extend(scrypto_encode(vault_id));
-                vault_address
-            }
-            Address::LocalComponent(component_address, child_id) => {
-                let mut vault_address = scrypto_encode(component_address);
-                vault_address.extend(scrypto_encode(child_id));
-                vault_address
-            }
             Address::NonFungibleSet(resource_address) => {
                 resource_to_non_fungible_space!(resource_address.clone())
             }
-            Address::KeyValueStore(component_address, kv_store_id) => {
-                let mut entry_address = scrypto_encode(component_address);
-                entry_address.extend(scrypto_encode(kv_store_id));
-                entry_address
+            Address::KeyValueStore(ancestors, kv_store_id) => {
+                let mut address = Vec::new();
+                for ancestor in ancestors {
+                    address.extend(ancestor.encode_address());
+                }
+                address.extend(scrypto_encode(kv_store_id));
+                address
             }
+            Address::Vault(ancestors, vault_id) => {
+                let mut address = Vec::new();
+                for ancestor in ancestors {
+                    address.extend(ancestor.encode_address());
+                }
+                address.extend(scrypto_encode(vault_id));
+                address
+            }
+            Address::LocalComponent(ancestors, child_id) => {
+                let mut address = Vec::new();
+                for ancestor in ancestors {
+                    address.extend(ancestor.encode_address());
+                }
+                address.extend(scrypto_encode(child_id));
+                address
+            }
+        }
+    }
+
+    pub fn child(&self, child_id: ValueId) -> Address {
+        let next_ancestors = match self {
+            Address::KeyValueStore(ancestors, kv_store_id) => {
+                let mut next_ancestors = ancestors.clone();
+                next_ancestors.push(ValueId::KeyValueStore(kv_store_id.clone()));
+                next_ancestors
+            }
+            Address::LocalComponent(ancestors, component_id) => {
+                let mut next_ancestors = ancestors.clone();
+                next_ancestors.push(ValueId::Component(component_id.clone()));
+                next_ancestors
+            }
+            Address::GlobalComponent(component_address) => vec![ValueId::Component(*component_address)],
+            _ => panic!("Unexpected"),
+        };
+
+        match child_id {
+            ValueId::KeyValueStore(kv_store_id) => Address::KeyValueStore(next_ancestors, kv_store_id),
+            ValueId::Vault(vault_id) => Address::Vault(next_ancestors, vault_id),
+            ValueId::Component(component_id) => Address::LocalComponent(next_ancestors, component_id),
+            _ => panic!("Unexpected"),
         }
     }
 }
@@ -160,18 +195,6 @@ impl Into<Address> for ComponentAddress {
 impl Into<Address> for ResourceAddress {
     fn into(self) -> Address {
         Address::Resource(self)
-    }
-}
-
-impl Into<Address> for (ComponentAddress, VaultId) {
-    fn into(self) -> Address {
-        Address::Vault(self.0, self.1)
-    }
-}
-
-impl Into<Address> for (ComponentAddress, ComponentAddress) {
-    fn into(self) -> Address {
-        Address::LocalComponent(self.0, self.1)
     }
 }
 
@@ -201,16 +224,6 @@ impl Into<ResourceAddress> for Address {
             return resource_address;
         } else {
             panic!("Address is not a resource address");
-        }
-    }
-}
-
-impl Into<(ComponentAddress, VaultId)> for Address {
-    fn into(self) -> (ComponentAddress, VaultId) {
-        if let Address::Vault(component_address, id) = self {
-            return (component_address, id);
-        } else {
-            panic!("Address is not a vault address");
         }
     }
 }
@@ -424,6 +437,10 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
         let mut space_address = scrypto_encode(&component_address);
         space_address.extend(scrypto_encode(&kv_store_id));
         self.up_virtual_substate_space.insert(space_address);
+    }
+
+    pub fn create_key_space_2(&mut self, address: Address) {
+        self.up_virtual_substate_space.insert(address.encode());
     }
 
     pub fn take_lock<A: Into<Address>>(
@@ -723,44 +740,43 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
         }
     }
 
-    pub fn insert_objects_into_component(
+    pub fn insert_objects(
         &mut self,
         values: HashMap<ValueId, REValue>,
-        component_address: ComponentAddress,
+        address: Address,
     ) {
         for (id, value) in values {
+            let child_address = address.child(id);
             match value {
                 REValue::Vault(vault) => {
-                    let addr: (ComponentAddress, VaultId) = (component_address, id.into());
-                    self.create_uuid_value(addr, vault);
+                    self.create_uuid_value(child_address, vault);
                 }
                 REValue::Component {
                     component,
                     child_values,
                 } => {
-                    let addr: (ComponentAddress, ComponentAddress) = (component_address, id.into());
-                    self.create_uuid_value(addr, component);
+                    self.create_uuid_value(child_address.clone(), component);
                     let child_values = child_values
                         .into_iter()
                         .map(|(id, v)| (id, v.into_inner()))
                         .collect();
-                    self.insert_objects_into_component(child_values, component_address);
+                    self.insert_objects(child_values, child_address);
                 }
                 REValue::KeyValueStore {
                     store,
                     child_values,
                 } => {
-                    let id = id.into();
-                    self.create_key_space(component_address, id);
-                    let parent_address = Address::KeyValueStore(component_address, id);
+                    self.create_key_space_2(child_address.clone());
                     for (k, v) in store.store {
-                        self.set_key_value(parent_address.clone(), k, Some(v));
+                        self.set_key_value(child_address.clone(), k, Some(v));
                     }
+
+                    // TODO: Move child values with entry as parent rather than the store
                     let child_values = child_values
                         .into_iter()
                         .map(|(id, v)| (id, v.into_inner()))
                         .collect();
-                    self.insert_objects_into_component(child_values, component_address);
+                    self.insert_objects(child_values, child_address);
                 }
                 _ => panic!("Invalid value being persisted: {:?}", value),
             }
