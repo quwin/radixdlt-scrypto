@@ -25,8 +25,7 @@ pub fn dump_package<T: ReadableSubstateStore, O: std::io::Write>(
     output: &mut O,
 ) -> Result<(), DisplayError> {
     let package: Option<ValidatedPackage> = substate_store
-        .get_decoded_substate(&package_address)
-        .map(|(package, _)| package);
+        .get_decoded_substate(&package_address);
     match package {
         Some(b) => {
             writeln!(
@@ -54,8 +53,7 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
     output: &mut O,
 ) -> Result<(), DisplayError> {
     let component: Option<Component> = substate_store
-        .get_decoded_substate(&component_address)
-        .map(|(component, _)| component);
+        .get_decoded_substate(&component_address);
     match component {
         Some(c) => {
             writeln!(
@@ -148,7 +146,6 @@ fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
         let resource_address = vault.resource_address();
         let resource_manager: ResourceManager = substate_store
             .get_decoded_substate(&resource_address)
-            .map(|(resource, _)| resource)
             .unwrap();
         writeln!(
             output,
@@ -206,8 +203,7 @@ pub fn dump_resource_manager<T: ReadableSubstateStore, O: std::io::Write>(
     output: &mut O,
 ) -> Result<(), DisplayError> {
     let resource_manager: Option<ResourceManager> = substate_store
-        .get_decoded_substate(&resource_address)
-        .map(|(resource, _)| resource);
+        .get_decoded_substate(&resource_address);
     match resource_manager {
         Some(r) => {
             writeln!(

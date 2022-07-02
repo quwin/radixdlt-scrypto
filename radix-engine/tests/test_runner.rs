@@ -1,6 +1,6 @@
 use radix_engine::engine::{Receipt, TransactionExecutor};
 use radix_engine::ledger::*;
-use radix_engine::model::{export_abi, export_abi_by_component, extract_package, Component};
+use radix_engine::model::{export_abi, export_abi_by_component, extract_package};
 use radix_engine::wasm::{DefaultWasmEngine, WasmInstrumenter};
 use sbor::describe::Fields;
 use sbor::Type;
@@ -108,13 +108,6 @@ impl TestRunner {
         .execute(&transaction);
 
         receipt
-    }
-
-    pub fn inspect_component(&self, component_address: ComponentAddress) -> Component {
-        self.substate_store
-            .get_decoded_substate(&component_address)
-            .map(|(component, _)| component)
-            .unwrap()
     }
 
     pub fn export_abi(
