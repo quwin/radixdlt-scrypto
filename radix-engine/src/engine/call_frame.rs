@@ -151,7 +151,10 @@ impl REValueLocation {
                 root: root.clone(),
                 path: vec![child_id],
             },
-            REValueLocation::Owned { root, path: ancestors } => {
+            REValueLocation::Owned {
+                root,
+                path: ancestors,
+            } => {
                 let mut next_path = ancestors.clone();
                 next_path.push(child_id);
                 REValueLocation::Owned {
@@ -163,7 +166,10 @@ impl REValueLocation {
                 root: root.clone(),
                 path: vec![child_id],
             },
-            REValueLocation::Borrowed { root, path: ancestors } => {
+            REValueLocation::Borrowed {
+                root,
+                path: ancestors,
+            } => {
                 let mut next_ancestors = ancestors.clone();
                 next_ancestors.push(child_id);
                 REValueLocation::Borrowed {
@@ -171,9 +177,7 @@ impl REValueLocation {
                     path: next_ancestors,
                 }
             }
-            REValueLocation::Track(address) => {
-                REValueLocation::Track(address.child(child_id))
-            },
+            REValueLocation::Track(address) => REValueLocation::Track(address.child(child_id)),
         }
     }
 
@@ -211,10 +215,7 @@ impl REValueLocation {
                 let cell = owned_values.get(root).unwrap();
                 cell.borrow()
             }
-            REValueLocation::Owned {
-                root,
-                ref path,
-            } => unsafe {
+            REValueLocation::Owned { root, ref path } => unsafe {
                 let root_value = owned_values
                     .get(&root)
                     .unwrap()
@@ -225,12 +226,9 @@ impl REValueLocation {
                     .expect("Should have children");
                 children.get_child(path)
             },
-            REValueLocation::Borrowed { root, path} => unsafe {
+            REValueLocation::Borrowed { root, path } => unsafe {
                 let borrowed = borrowed_values.get(root).unwrap();
-                borrowed
-                    .get_children_store()
-                    .unwrap()
-                    .get_child(path)
+                borrowed.get_children_store().unwrap().get_child(path)
             },
             _ => panic!("Not an owned ref"),
         }
@@ -251,9 +249,7 @@ impl REValueLocation {
             REValueLocation::BorrowedRoot(id) => {
                 REValueRef::Borrowed(borrowed_values.get(id).unwrap())
             }
-            REValueLocation::Track(address) => {
-                REValueRef::Track(track, address.clone())
-            }
+            REValueLocation::Track(address) => REValueRef::Track(track, address.clone()),
         }
     }
 
@@ -267,10 +263,7 @@ impl REValueLocation {
                 let cell = owned_values.get_mut(id).unwrap();
                 cell.borrow_mut()
             }
-            REValueLocation::Owned {
-                root,
-                ref path,
-            } => {
+            REValueLocation::Owned { root, ref path } => {
                 let root_value = owned_values.get_mut(&root).unwrap().get_mut();
                 let children = root_value
                     .get_children_store_mut()
@@ -303,9 +296,7 @@ impl REValueLocation {
             REValueLocation::BorrowedRoot(id) => {
                 REValueRefMut::Borrowed(borrowed_values.get_mut(id).unwrap())
             }
-            REValueLocation::Track(address) => {
-                REValueRefMut::Track(track, address.clone())
-            }
+            REValueLocation::Track(address) => REValueRefMut::Track(track, address.clone()),
         }
     }
 }
@@ -988,7 +979,9 @@ where
                     } else if self.track.take_lock(*component_address, false).is_ok() {
                         return Some((
                             REValueInfo {
-                                location: REValueLocation::Track(Address::GlobalComponent(*component_address)),
+                                location: REValueLocation::Track(Address::GlobalComponent(
+                                    *component_address,
+                                )),
                                 visible: true,
                             },
                             Some(component_address),
@@ -1123,14 +1116,18 @@ where
                         value_refs.insert(
                             ValueId::Resource(resource_address),
                             REValueInfo {
-                                location: REValueLocation::Track(Address::Resource(resource_address)),
+                                location: REValueLocation::Track(Address::Resource(
+                                    resource_address,
+                                )),
                                 visible: true,
                             },
                         );
                         value_refs.insert(
                             ValueId::NonFungibles(resource_address),
                             REValueInfo {
-                                location: REValueLocation::Track(Address::NonFungibleSet(resource_address)),
+                                location: REValueLocation::Track(Address::NonFungibleSet(
+                                    resource_address,
+                                )),
                                 visible: true,
                             },
                         );
@@ -1176,7 +1173,9 @@ where
                         value_refs.insert(
                             ValueId::Resource(resource_address.clone()),
                             REValueInfo {
-                                location: REValueLocation::Track(Address::Resource(resource_address.clone())),
+                                location: REValueLocation::Track(Address::Resource(
+                                    resource_address.clone(),
+                                )),
                                 visible: true,
                             },
                         );
@@ -1204,7 +1203,9 @@ where
                         value_refs.insert(
                             ValueId::Resource(resource_address.clone()),
                             REValueInfo {
-                                location: REValueLocation::Track(Address::Resource(resource_address.clone())),
+                                location: REValueLocation::Track(Address::Resource(
+                                    resource_address.clone(),
+                                )),
                                 visible: true,
                             },
                         );
@@ -1241,7 +1242,9 @@ where
                 value_refs.insert(
                     ValueId::NonFungibles(*resource_address),
                     REValueInfo {
-                        location: REValueLocation::Track(Address::NonFungibleSet(*resource_address)),
+                        location: REValueLocation::Track(Address::NonFungibleSet(
+                            *resource_address,
+                        )),
                         visible: true,
                     },
                 );
@@ -1668,11 +1671,8 @@ where
             panic!("Trying to read value which is not visible.")
         }
 
-        info.location.to_ref(
-            &self.owned_values,
-            &self.frame_borrowed_values,
-            &self.track,
-        )
+        info.location
+            .to_ref(&self.owned_values, &self.frame_borrowed_values, &self.track)
     }
 
     fn borrow_value_mut(&mut self, value_id: &ValueId) -> RENativeValueRef<'p> {

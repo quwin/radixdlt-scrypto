@@ -5,11 +5,11 @@ use radix_engine::wasm::{DefaultWasmEngine, WasmInstrumenter};
 use sbor::describe::Fields;
 use sbor::Type;
 use scrypto::abi::{BlueprintAbi, Fn};
+use scrypto::engine::types::ValueId;
 use scrypto::prelude::*;
 use scrypto::prelude::{HashMap, Package};
-use scrypto::{abi, to_struct};
-use scrypto::engine::types::ValueId;
 use scrypto::values::ScryptoValue;
+use scrypto::{abi, to_struct};
 use transaction::builder::ManifestBuilder;
 use transaction::model::TestTransaction;
 use transaction::model::TransactionManifest;
@@ -116,22 +116,46 @@ impl TestRunner {
         &self.substate_store
     }
 
-    pub fn inspect_account_vault(&self, address: Address, resource_address: ResourceAddress) -> radix_engine::model::Vault {
-        let substate = self.inspect_store().get_substate(&address.encode()).expect("Account should exist");
+    pub fn inspect_account_vault(
+        &self,
+        address: Address,
+        resource_address: ResourceAddress,
+    ) -> radix_engine::model::Vault {
+        let substate = self
+            .inspect_store()
+            .get_substate(&address.encode())
+            .expect("Account should exist");
         let component: radix_engine::model::Component = scrypto_decode(&substate.value).unwrap();
         let value = ScryptoValue::from_slice(component.state()).unwrap();
-        let kv_store_id = value.kv_store_ids.iter().nth(0).expect("Account should have a kv store");
+        let kv_store_id = value
+            .kv_store_ids
+            .iter()
+            .nth(0)
+            .expect("Account should have a kv store");
 
-        let key_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id.clone())));
+        let key_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(
+            kv_store_id.clone(),
+        )));
         let mut key_address_bytes = key_address.encode();
         key_address_bytes.extend(scrypto_encode(&resource_address));
-        let key_entry = self.inspect_store().get_substate(&key_address_bytes).expect("Key Entry should exist");
+        let key_entry = self
+            .inspect_store()
+            .get_substate(&key_address_bytes)
+            .expect("Key Entry should exist");
         let entry: Option<Vec<u8>> = scrypto_decode(&key_entry.value).unwrap();
         let entry_value = ScryptoValue::from_slice(&entry.unwrap()).unwrap();
-        let vault_id = entry_value.vault_ids.iter().nth(0).expect("Entry should have a vault");
+        let vault_id = entry_value
+            .vault_ids
+            .iter()
+            .nth(0)
+            .expect("Entry should have a vault");
 
-        let vault_address = key_address.child(AddressPath::ValueId(ValueId::Vault(vault_id.clone())));
-        let vault_substate = self.inspect_store().get_substate(&vault_address.encode()).expect("Vault should exist");
+        let vault_address =
+            key_address.child(AddressPath::ValueId(ValueId::Vault(vault_id.clone())));
+        let vault_substate = self
+            .inspect_store()
+            .get_substate(&vault_address.encode())
+            .expect("Vault should exist");
         let vault: radix_engine::model::Vault = scrypto_decode(&vault_substate.value).unwrap();
         vault
     }

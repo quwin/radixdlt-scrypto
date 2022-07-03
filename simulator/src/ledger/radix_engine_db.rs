@@ -66,7 +66,6 @@ impl RadixEngineDB {
     }
 }
 
-
 impl ReadableSubstateStore for RadixEngineDB {
     fn get_substate(&self, address: &[u8]) -> Option<Substate> {
         self.read(address).map(|b| scrypto_decode(&b).unwrap())
@@ -101,10 +100,7 @@ impl WriteableSubstateStore for RadixEngineDB {
 }
 
 impl QueryableSubstateStore for RadixEngineDB {
-    fn get_substates(
-        &self,
-        address: &[u8],
-    ) -> Vec<(Vec<u8>, Vec<u8>)> {
+    fn get_substates(&self, address: &[u8]) -> Vec<(Vec<u8>, Vec<u8>)> {
         let key_size = address.len();
         let mut iter = self
             .db

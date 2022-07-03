@@ -40,7 +40,7 @@ impl ValueId {
         match self {
             ValueId::KeyValueStore(kv_store_id) => scrypto_encode(kv_store_id),
             ValueId::Component(component_address) => scrypto_encode(component_address),
-            _ => panic!("invalid address")
+            _ => panic!("invalid address"),
         }
     }
 }

@@ -67,10 +67,7 @@ impl WriteableSubstateStore for InMemorySubstateStore {
 }
 
 impl QueryableSubstateStore for InMemorySubstateStore {
-    fn get_substates(
-        &self,
-        address: &[u8],
-    ) -> Vec<(Vec<u8>, Vec<u8>)> {
+    fn get_substates(&self, address: &[u8]) -> Vec<(Vec<u8>, Vec<u8>)> {
         let mut items = Vec::new();
         for (key, value) in &self.substates {
             let key_size = key.len();

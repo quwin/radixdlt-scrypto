@@ -35,10 +35,7 @@ pub trait ReadableSubstateStore {
     fn get_substate(&self, address: &[u8]) -> Option<Substate>;
     fn get_space(&mut self, address: &[u8]) -> Option<PhysicalSubstateId>;
 
-    fn get_decoded_substate<A: Encode, T: Decode>(
-        &self,
-        address: &A,
-    ) -> Option<T> {
+    fn get_decoded_substate<A: Encode, T: Decode>(&self, address: &A) -> Option<T> {
         self.get_substate(&scrypto_encode(address))
             .map(|s| scrypto_decode(&s.value).unwrap())
     }
@@ -53,8 +50,5 @@ pub trait WriteableSubstateStore {
 }
 
 pub trait QueryableSubstateStore {
-    fn get_substates(
-        &self,
-        address: &[u8],
-    ) -> Vec<(Vec<u8>, Vec<u8>)>;
+    fn get_substates(&self, address: &[u8]) -> Vec<(Vec<u8>, Vec<u8>)>;
 }

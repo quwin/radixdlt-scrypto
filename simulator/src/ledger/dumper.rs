@@ -1,12 +1,12 @@
 #![allow(unused_must_use)]
 use colored::*;
+use radix_engine::engine::{Address, AddressPath};
 use radix_engine::ledger::*;
 use radix_engine::model::*;
 use sbor::rust::collections::HashSet;
 use scrypto::buffer::{scrypto_decode, scrypto_encode};
 use scrypto::engine::types::*;
 use scrypto::values::*;
-use radix_engine::engine::{Address, AddressPath};
 
 use crate::utils::*;
 
@@ -24,8 +24,7 @@ pub fn dump_package<T: ReadableSubstateStore, O: std::io::Write>(
     substate_store: &T,
     output: &mut O,
 ) -> Result<(), DisplayError> {
-    let package: Option<ValidatedPackage> = substate_store
-        .get_decoded_substate(&package_address);
+    let package: Option<ValidatedPackage> = substate_store.get_decoded_substate(&package_address);
     match package {
         Some(b) => {
             writeln!(
@@ -52,8 +51,7 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
     substate_store: &T,
     output: &mut O,
 ) -> Result<(), DisplayError> {
-    let component: Option<Component> = substate_store
-        .get_decoded_substate(&component_address);
+    let component: Option<Component> = substate_store.get_decoded_substate(&component_address);
     match component {
         Some(c) => {
             writeln!(
@@ -83,8 +81,16 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
             writeln!(output, "{}: {}", "State".green().bold(), state_data);
 
             // Find all vaults owned by the component, assuming a tree structure.
-            let vaults_addresses = state_data.vault_ids.iter().cloned()
-                .map(|v| Address::Vault(vec![AddressPath::ValueId(ValueId::Component(component_address))], v))
+            let vaults_addresses = state_data
+                .vault_ids
+                .iter()
+                .cloned()
+                .map(|v| {
+                    Address::Vault(
+                        vec![AddressPath::ValueId(ValueId::Component(component_address))],
+                        v,
+                    )
+                })
                 .collect();
 
             // TODO: recursively get vaules within component
@@ -104,7 +110,10 @@ fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::
 ) -> Result<(Vec<KeyValueStoreId>, Vec<VaultId>), DisplayError> {
     let mut referenced_maps = Vec::new();
     let mut referenced_vaults = Vec::new();
-    let address = Address::KeyValueStore(vec![AddressPath::ValueId(ValueId::Component(component_address))], kv_store_id.clone());
+    let address = Address::KeyValueStore(
+        vec![AddressPath::ValueId(ValueId::Component(component_address))],
+        kv_store_id.clone(),
+    );
     let substates = substate_store.get_substates(&address.encode());
     writeln!(
         output,
@@ -136,7 +145,9 @@ fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
 ) -> Result<(), DisplayError> {
     writeln!(output, "{}:", "Resources".green().bold());
     for (last, vault_address) in vault_addresses.iter().identify_last() {
-        let substate = substate_store.get_substate(&vault_address.encode()).unwrap();
+        let substate = substate_store
+            .get_substate(&vault_address.encode())
+            .unwrap();
         let vault: Vault = scrypto_decode(&substate.value).unwrap();
         let amount = vault.total_amount();
         let resource_address = vault.resource_address();
@@ -198,8 +209,8 @@ pub fn dump_resource_manager<T: ReadableSubstateStore, O: std::io::Write>(
     substate_store: &T,
     output: &mut O,
 ) -> Result<(), DisplayError> {
-    let resource_manager: Option<ResourceManager> = substate_store
-        .get_decoded_substate(&resource_address);
+    let resource_manager: Option<ResourceManager> =
+        substate_store.get_decoded_substate(&resource_address);
     match resource_manager {
         Some(r) => {
             writeln!(

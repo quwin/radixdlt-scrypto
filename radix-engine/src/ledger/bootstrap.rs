@@ -77,7 +77,10 @@ where
     track.create_uuid_value(ECDSA_TOKEN, ecdsa_token);
 
     let system_vault = Vault::new(minted_xrd);
-    let vault_address = Address::Vault(vec![AddressPath::ValueId(ValueId::Component(SYSTEM_COMPONENT))], XRD_VAULT_ID);
+    let vault_address = Address::Vault(
+        vec![AddressPath::ValueId(ValueId::Component(SYSTEM_COMPONENT))],
+        XRD_VAULT_ID,
+    );
     track.create_uuid_value(vault_address, system_vault);
 
     let system_component = Component::new(

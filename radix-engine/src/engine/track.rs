@@ -3,8 +3,8 @@ use sbor::rust::collections::*;
 use sbor::rust::format;
 use sbor::rust::ops::RangeFull;
 use sbor::rust::string::String;
-use sbor::rust::vec::Vec;
 use sbor::rust::vec;
+use sbor::rust::vec::Vec;
 use sbor::*;
 use scrypto::buffer::scrypto_decode;
 use scrypto::buffer::scrypto_encode;
@@ -183,7 +183,9 @@ impl Address {
         let next_ancestors = match self {
             Address::KeyValueStore(ancestors, kv_store_id) => {
                 let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id.clone())));
+                next_ancestors.push(AddressPath::ValueId(ValueId::KeyValueStore(
+                    kv_store_id.clone(),
+                )));
                 next_ancestors
             }
             Address::KeyValueStoreEntry(ancestors, key) => {
@@ -193,18 +195,28 @@ impl Address {
             }
             Address::LocalComponent(ancestors, component_id) => {
                 let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(AddressPath::ValueId(ValueId::Component(component_id.clone())));
+                next_ancestors.push(AddressPath::ValueId(ValueId::Component(
+                    component_id.clone(),
+                )));
                 next_ancestors
             }
-            Address::GlobalComponent(component_address) => vec![AddressPath::ValueId(ValueId::Component(*component_address))],
+            Address::GlobalComponent(component_address) => {
+                vec![AddressPath::ValueId(ValueId::Component(*component_address))]
+            }
             _ => panic!("Unexpected"),
         };
 
         match child_id {
-            AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id)) => Address::KeyValueStore(next_ancestors, kv_store_id),
+            AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id)) => {
+                Address::KeyValueStore(next_ancestors, kv_store_id)
+            }
             AddressPath::Key(key) => Address::KeyValueStoreEntry(next_ancestors, key),
-            AddressPath::ValueId(ValueId::Vault(vault_id)) => Address::Vault(next_ancestors, vault_id),
-            AddressPath::ValueId(ValueId::Component(component_id)) => Address::LocalComponent(next_ancestors, component_id),
+            AddressPath::ValueId(ValueId::Vault(vault_id)) => {
+                Address::Vault(next_ancestors, vault_id)
+            }
+            AddressPath::ValueId(ValueId::Component(component_id)) => {
+                Address::LocalComponent(next_ancestors, component_id)
+            }
             _ => panic!("Unexpected"),
         }
     }
@@ -770,11 +782,7 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
         }
     }
 
-    pub fn insert_objects(
-        &mut self,
-        values: HashMap<AddressPath, REValue>,
-        address: Address,
-    ) {
+    pub fn insert_objects(&mut self, values: HashMap<AddressPath, REValue>, address: Address) {
         for (id, value) in values {
             let child_address = address.child(id);
             match value {

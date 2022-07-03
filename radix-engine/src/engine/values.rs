@@ -369,22 +369,19 @@ impl InMemoryChildren {
         let (first, rest) = path.split_first().unwrap();
 
         if rest.is_empty() {
-            let value = self.child_values.get(first).expect("Value expected to exist");
+            let value = self
+                .child_values
+                .get(first)
+                .expect("Value expected to exist");
             return value.borrow();
         }
 
-        let value = self
-            .child_values
-            .get(first)
-            .unwrap();
+        let value = self.child_values.get(first).unwrap();
         let value = value.try_borrow_unguarded().unwrap();
         value.get_children_store().unwrap().get_child(rest)
     }
 
-    pub fn get_child_mut(
-        &mut self,
-        path: &[AddressPath],
-    ) -> RefMut<REValue> {
+    pub fn get_child_mut(&mut self, path: &[AddressPath]) -> RefMut<REValue> {
         let (first, rest) = path.split_first().unwrap();
 
         if rest.is_empty() {
@@ -395,10 +392,7 @@ impl InMemoryChildren {
             return value.borrow_mut();
         }
 
-        let value = self
-            .child_values
-            .get_mut(first)
-            .unwrap();
+        let value = self.child_values.get_mut(first).unwrap();
         let children_store = value.get_mut().get_children_store_mut().unwrap();
         children_store.get_child_mut(rest)
     }
