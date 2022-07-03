@@ -90,12 +90,14 @@ pub struct VirtualSubstateId(pub SubstateParentId, pub Vec<u8>);
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AddressPath {
     ValueId(ValueId),
+    Key(Vec<u8>),
 }
 
 impl AddressPath {
     pub fn encode(&self) -> Vec<u8> {
         match self {
             AddressPath::ValueId(value_id) => value_id.encode_address(),
+            AddressPath::Key(key) => key.clone(),
         }
     }
 }
@@ -108,6 +110,7 @@ pub enum Address {
     NonFungibleSet(ResourceAddress),
 
     KeyValueStore(Vec<AddressPath>, KeyValueStoreId),
+    KeyValueStoreEntry(Vec<AddressPath>, Vec<u8>),
     Vault(Vec<AddressPath>, VaultId),
     LocalComponent(Vec<AddressPath>, ComponentAddress),
 }
@@ -149,6 +152,14 @@ impl Address {
                 address.extend(scrypto_encode(kv_store_id));
                 address
             }
+            Address::KeyValueStoreEntry(ancestors, key) => {
+                let mut address = Vec::new();
+                for ancestor in ancestors {
+                    address.extend(ancestor.encode());
+                }
+                address.extend(key);
+                address
+            }
             Address::Vault(ancestors, vault_id) => {
                 let mut address = Vec::new();
                 for ancestor in ancestors {
@@ -175,6 +186,11 @@ impl Address {
                 next_ancestors.push(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id.clone())));
                 next_ancestors
             }
+            Address::KeyValueStoreEntry(ancestors, key) => {
+                let mut next_ancestors = ancestors.clone();
+                next_ancestors.push(AddressPath::Key(key.clone()));
+                next_ancestors
+            }
             Address::LocalComponent(ancestors, component_id) => {
                 let mut next_ancestors = ancestors.clone();
                 next_ancestors.push(AddressPath::ValueId(ValueId::Component(component_id.clone())));
@@ -186,6 +202,7 @@ impl Address {
 
         match child_id {
             AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id)) => Address::KeyValueStore(next_ancestors, kv_store_id),
+            AddressPath::Key(key) => Address::KeyValueStoreEntry(next_ancestors, key),
             AddressPath::ValueId(ValueId::Vault(vault_id)) => Address::Vault(next_ancestors, vault_id),
             AddressPath::ValueId(ValueId::Component(component_id)) => Address::LocalComponent(next_ancestors, component_id),
             _ => panic!("Unexpected"),

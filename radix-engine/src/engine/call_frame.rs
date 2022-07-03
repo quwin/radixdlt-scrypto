@@ -942,6 +942,7 @@ where
                         AddressPath::ValueId(value_id) => {
                             self.value_refs.remove(&value_id);
                         }
+                        AddressPath::Key(..) => {}
                     }
                 }
             }
