@@ -10,7 +10,7 @@ use scrypto::resource::ResourceMethodAuthKey::Withdraw;
 use scrypto::resource::LOCKED;
 use scrypto::rule;
 
-use crate::engine::{Address, Track, TrackReceipt};
+use crate::engine::{Address, AddressPath, Track, TrackReceipt};
 use crate::ledger::{ReadableSubstateStore, WriteableSubstateStore};
 use crate::model::ValidatedPackage;
 
@@ -77,7 +77,7 @@ where
     track.create_uuid_value(ECDSA_TOKEN, ecdsa_token);
 
     let system_vault = Vault::new(minted_xrd);
-    let vault_address = Address::Vault(vec![ValueId::Component(SYSTEM_COMPONENT)], XRD_VAULT_ID);
+    let vault_address = Address::Vault(vec![AddressPath::ValueId(ValueId::Component(SYSTEM_COMPONENT))], XRD_VAULT_ID);
     track.create_uuid_value(vault_address, system_vault);
 
     let system_component = Component::new(

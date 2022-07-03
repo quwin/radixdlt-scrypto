@@ -6,8 +6,7 @@ use sbor::rust::collections::HashSet;
 use scrypto::buffer::{scrypto_decode, scrypto_encode};
 use scrypto::engine::types::*;
 use scrypto::values::*;
-use std::collections::VecDeque;
-use radix_engine::engine::Address;
+use radix_engine::engine::{Address, AddressPath};
 
 use crate::utils::*;
 
@@ -85,7 +84,7 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
 
             // Find all vaults owned by the component, assuming a tree structure.
             let vaults_addresses = state_data.vault_ids.iter().cloned()
-                .map(|v| Address::Vault(vec![ValueId::Component(component_address)], v))
+                .map(|v| Address::Vault(vec![AddressPath::ValueId(ValueId::Component(component_address))], v))
                 .collect();
 
             // TODO: recursively get vaules within component
@@ -105,7 +104,7 @@ fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::
 ) -> Result<(Vec<KeyValueStoreId>, Vec<VaultId>), DisplayError> {
     let mut referenced_maps = Vec::new();
     let mut referenced_vaults = Vec::new();
-    let address = Address::KeyValueStore(vec![ValueId::Component(component_address)], kv_store_id.clone());
+    let address = Address::KeyValueStore(vec![AddressPath::ValueId(ValueId::Component(component_address))], kv_store_id.clone());
     let substates = substate_store.get_substates(&address.encode());
     writeln!(
         output,

@@ -88,15 +88,28 @@ pub enum SubstateParentId {
 pub struct VirtualSubstateId(pub SubstateParentId, pub Vec<u8>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum AddressPath {
+    ValueId(ValueId),
+}
+
+impl AddressPath {
+    pub fn encode(&self) -> Vec<u8> {
+        match self {
+            AddressPath::ValueId(value_id) => value_id.encode_address(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Address {
     Resource(ResourceAddress),
     GlobalComponent(ComponentAddress),
     Package(PackageAddress),
     NonFungibleSet(ResourceAddress),
 
-    KeyValueStore(Vec<ValueId>, KeyValueStoreId),
-    Vault(Vec<ValueId>, VaultId),
-    LocalComponent(Vec<ValueId>, ComponentAddress),
+    KeyValueStore(Vec<AddressPath>, KeyValueStoreId),
+    Vault(Vec<AddressPath>, VaultId),
+    LocalComponent(Vec<AddressPath>, ComponentAddress),
 }
 
 #[derive(Debug)]
@@ -131,7 +144,7 @@ impl Address {
             Address::KeyValueStore(ancestors, kv_store_id) => {
                 let mut address = Vec::new();
                 for ancestor in ancestors {
-                    address.extend(ancestor.encode_address());
+                    address.extend(ancestor.encode());
                 }
                 address.extend(scrypto_encode(kv_store_id));
                 address
@@ -139,7 +152,7 @@ impl Address {
             Address::Vault(ancestors, vault_id) => {
                 let mut address = Vec::new();
                 for ancestor in ancestors {
-                    address.extend(ancestor.encode_address());
+                    address.extend(ancestor.encode());
                 }
                 address.extend(scrypto_encode(vault_id));
                 address
@@ -147,7 +160,7 @@ impl Address {
             Address::LocalComponent(ancestors, child_id) => {
                 let mut address = Vec::new();
                 for ancestor in ancestors {
-                    address.extend(ancestor.encode_address());
+                    address.extend(ancestor.encode());
                 }
                 address.extend(scrypto_encode(child_id));
                 address
@@ -159,15 +172,15 @@ impl Address {
         let next_ancestors = match self {
             Address::KeyValueStore(ancestors, kv_store_id) => {
                 let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(ValueId::KeyValueStore(kv_store_id.clone()));
+                next_ancestors.push(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id.clone())));
                 next_ancestors
             }
             Address::LocalComponent(ancestors, component_id) => {
                 let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(ValueId::Component(component_id.clone()));
+                next_ancestors.push(AddressPath::ValueId(ValueId::Component(component_id.clone())));
                 next_ancestors
             }
-            Address::GlobalComponent(component_address) => vec![ValueId::Component(*component_address)],
+            Address::GlobalComponent(component_address) => vec![AddressPath::ValueId(ValueId::Component(*component_address))],
             _ => panic!("Unexpected"),
         };
 
