@@ -360,7 +360,7 @@ impl InMemoryChildren {
         descendents
     }
 
-    pub unsafe fn get_child(&self, ancestors: &[KeyValueStoreId], id: &ValueId) -> Ref<REValue> {
+    pub unsafe fn get_child(&self, ancestors: &[ValueId], id: &ValueId) -> Ref<REValue> {
         if ancestors.is_empty() {
             let value = self.child_values.get(id).expect("Value expected to exist");
             return value.borrow();
@@ -369,7 +369,7 @@ impl InMemoryChildren {
         let (first, rest) = ancestors.split_first().unwrap();
         let value = self
             .child_values
-            .get(&ValueId::KeyValueStore(*first))
+            .get(first)
             .unwrap();
         let value = value.try_borrow_unguarded().unwrap();
         value.get_children_store().unwrap().get_child(rest, id)
@@ -377,7 +377,7 @@ impl InMemoryChildren {
 
     pub fn get_child_mut(
         &mut self,
-        ancestors: &[KeyValueStoreId],
+        ancestors: &[ValueId],
         id: &ValueId,
     ) -> RefMut<REValue> {
         if ancestors.is_empty() {
@@ -391,7 +391,7 @@ impl InMemoryChildren {
         let (first, rest) = ancestors.split_first().unwrap();
         let value = self
             .child_values
-            .get_mut(&ValueId::KeyValueStore(*first))
+            .get_mut(first)
             .unwrap();
         let children_store = value.get_mut().get_children_store_mut().unwrap();
         children_store.get_child_mut(rest, id)

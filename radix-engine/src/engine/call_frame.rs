@@ -134,13 +134,13 @@ pub enum REValueLocation {
     OwnedRoot(ValueId),
     Owned {
         root: ValueId,
-        ancestors: Vec<KeyValueStoreId>,
+        ancestors: Vec<ValueId>,
         id: ValueId,
     },
     BorrowedRoot(ValueId),
     Borrowed {
         root: ValueId,
-        ancestors: Vec<KeyValueStoreId>,
+        ancestors: Vec<ValueId>,
         id: ValueId,
     },
     Track(Address),
