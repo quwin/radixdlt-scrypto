@@ -1,8 +1,8 @@
+use crate::engine::{AddressPath, InMemoryChildren, REValue};
 use sbor::rust::cell::{Ref, RefMut};
 use sbor::rust::collections::*;
 use sbor::rust::vec::Vec;
 use scrypto::values::ScryptoValue;
-use crate::engine::{AddressPath, InMemoryChildren, REValue};
 
 #[derive(Debug)]
 pub struct PreCommittedKeyValueStore {
@@ -44,12 +44,18 @@ impl PreCommittedKeyValueStore {
         descendants
     }
 
-    pub fn put(&mut self, key: Vec<u8>, value: ScryptoValue, values: HashMap<AddressPath, REValue>) {
+    pub fn put(
+        &mut self,
+        key: Vec<u8>,
+        value: ScryptoValue,
+        values: HashMap<AddressPath, REValue>,
+    ) {
         if let Some((ref mut cur_value, children)) = self.store.get_mut(&key) {
             *cur_value = value;
             children.insert_children(values);
         } else {
-            self.store.insert(key, (value, InMemoryChildren::with_values(values)));
+            self.store
+                .insert(key, (value, InMemoryChildren::with_values(values)));
         }
     }
 

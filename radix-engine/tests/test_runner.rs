@@ -136,7 +136,8 @@ impl TestRunner {
         let kv_store_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(
             kv_store_id.clone(),
         )));
-        let entry_address = kv_store_address.child(AddressPath::Key(scrypto_encode(&resource_address)));
+        let entry_address =
+            kv_store_address.child(AddressPath::Key(scrypto_encode(&resource_address)));
         let key_entry = self
             .inspect_store()
             .get_substate(&entry_address.encode())

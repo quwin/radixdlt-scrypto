@@ -1,8 +1,8 @@
 use sbor::rust::cell::{Ref, RefCell, RefMut};
 use sbor::rust::collections::hash_map::IntoIter;
 use sbor::rust::collections::*;
-use sbor::rust::vec::Vec;
 use sbor::rust::vec;
+use sbor::rust::vec::Vec;
 use scrypto::engine::types::*;
 use scrypto::values::ScryptoValue;
 

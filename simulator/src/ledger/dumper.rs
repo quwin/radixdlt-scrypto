@@ -1,12 +1,13 @@
 #![allow(unused_must_use)]
+
 use colored::*;
 use radix_engine::engine::{Address, AddressPath};
 use radix_engine::ledger::*;
 use radix_engine::model::*;
-use sbor::rust::collections::HashSet;
 use scrypto::buffer::{scrypto_decode, scrypto_encode};
 use scrypto::engine::types::*;
 use scrypto::values::*;
+use std::collections::VecDeque;
 
 use crate::utils::*;
 
@@ -81,7 +82,8 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
             writeln!(output, "{}: {}", "State".green().bold(), state_data);
 
             // Find all vaults owned by the component, assuming a tree structure.
-            let vaults_addresses = state_data
+            // TODO: recursively get vaults within component
+            let mut vault_addresses: Vec<Address> = state_data
                 .vault_ids
                 .iter()
                 .cloned()
@@ -93,45 +95,71 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
                 })
                 .collect();
 
-            // TODO: recursively get vaules within component
+            let mut kv_store_queue: VecDeque<Address> = state_data
+                .kv_store_ids
+                .iter()
+                .cloned()
+                .map(|kv_store_id| {
+                    Address::KeyValueStore(
+                        vec![AddressPath::ValueId(ValueId::Component(component_address))],
+                        kv_store_id.clone(),
+                    )
+                })
+                .collect();
+            while !kv_store_queue.is_empty() {
+                let address = kv_store_queue.pop_front().unwrap();
+                let (maps, vaults) = dump_kv_store(address, substate_store, output)?;
+                kv_store_queue.extend(maps);
+                vault_addresses.extend(vaults);
+            }
 
             // Dump resources
-            dump_resources(vaults_addresses, substate_store, output)
+            dump_resources(vault_addresses, substate_store, output)
         }
         None => Err(DisplayError::ComponentNotFound),
     }
 }
 
 fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::Write>(
-    component_address: ComponentAddress,
-    kv_store_id: &KeyValueStoreId,
+    address: Address,
     substate_store: &T,
     output: &mut O,
-) -> Result<(Vec<KeyValueStoreId>, Vec<VaultId>), DisplayError> {
+) -> Result<(Vec<Address>, Vec<Address>), DisplayError> {
     let mut referenced_maps = Vec::new();
     let mut referenced_vaults = Vec::new();
-    let address = Address::KeyValueStore(
-        vec![AddressPath::ValueId(ValueId::Component(component_address))],
-        kv_store_id.clone(),
-    );
     let substates = substate_store.get_substates(&address.encode());
     writeln!(
         output,
-        "{}: {:?}{:?}",
+        "{}: {:?}",
         "Key Value Store".green().bold(),
-        component_address,
-        kv_store_id
+        address,
     );
     for (last, (k, v)) in substates.iter().identify_last() {
-        let key = ScryptoValue::from_slice(k).unwrap();
+        // TODO: split key into multiple paths
+        let single_key: Result<ScryptoValue, DecodeError> = ScryptoValue::from_slice(k);
+        if single_key.is_err() {
+            continue;
+        }
+        let key = single_key.unwrap();
+
         // TODO: cleanup
         let maybe_value_wrapper: Result<Option<Vec<u8>>, DecodeError> = scrypto_decode(v);
         if let Ok(value_wrapper) = maybe_value_wrapper {
             if let Some(v) = value_wrapper {
                 let value = ScryptoValue::from_slice(&v).unwrap();
                 writeln!(output, "{} {} => {}", list_item_prefix(last), key, value);
-                referenced_maps.extend(value.kv_store_ids);
-                referenced_vaults.extend(value.vault_ids);
+                for kv_store_id in value.kv_store_ids {
+                    let kv_address = address
+                        .child(AddressPath::Key(k.clone()))
+                        .child(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id)));
+                    referenced_maps.push(kv_address);
+                }
+                for vault_id in value.vault_ids {
+                    let vault_address = address
+                        .child(AddressPath::Key(k.clone()))
+                        .child(AddressPath::ValueId(ValueId::Vault(vault_id)));
+                    referenced_vaults.push(vault_address);
+                }
             }
         }
     }
@@ -139,7 +167,7 @@ fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::
 }
 
 fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
-    vault_addresses: HashSet<Address>,
+    vault_addresses: Vec<Address>,
     substate_store: &T,
     output: &mut O,
 ) -> Result<(), DisplayError> {
@@ -181,6 +209,8 @@ fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
                 let non_fungible: Option<NonFungible> =
                     scrypto_decode(&substate_store.get_substate(&nf_address).unwrap().value)
                         .unwrap();
+
+                let id = ScryptoValue::from_slice(&id.0).unwrap();
 
                 if let Some(non_fungible) = non_fungible {
                     let immutable_data =

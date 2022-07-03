@@ -263,11 +263,11 @@ impl REValueLocation {
             REValueLocation::Owned { root, ref path } => unsafe {
                 let root_value = owned_values.get_mut(&root).unwrap().get_mut();
                 root_value.get_child_mut(path)
-            }
+            },
             REValueLocation::Borrowed { root, path } => unsafe {
                 let borrowed = borrowed_values.get_mut(root).unwrap();
                 borrowed.get_child_mut(path)
-            }
+            },
             _ => panic!("Not an owned ref"),
         }
     }
@@ -447,7 +447,7 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         let maybe_value = match self {
             REValueRefMut::Owned(owned) => {
                 let store = owned.kv_store_mut();
-                store.get(key).map(|(v, _children) | v.dom.clone())
+                store.get(key).map(|(v, _children)| v.dom.clone())
             }
             REValueRefMut::Borrowed(..) => {
                 panic!("Not supported");
@@ -538,7 +538,7 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
                 let component = owned.component_mut();
                 component.set_state(value.raw);
                 owned.insert_children(to_store);
-            }
+            },
             _ => panic!("Unexpected component ref"),
         }
     }
@@ -1870,15 +1870,12 @@ where
 
         for child_id in cur_children {
             let child_location = match &address {
-                SubstateAddress::Component(..)
-                | SubstateAddress::NonFungible(..) => {
+                SubstateAddress::Component(..) | SubstateAddress::NonFungible(..) => {
                     parent_location.child(AddressPath::ValueId(child_id))
-                },
-                SubstateAddress::KeyValueEntry(.., key) => {
-                    parent_location
-                        .child(AddressPath::Key(key.raw.clone()))
-                        .child(AddressPath::ValueId(child_id))
                 }
+                SubstateAddress::KeyValueEntry(.., key) => parent_location
+                    .child(AddressPath::Key(key.raw.clone()))
+                    .child(AddressPath::ValueId(child_id)),
             };
 
             // Extend current readable space when kv stores are found
