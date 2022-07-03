@@ -360,41 +360,42 @@ impl InMemoryChildren {
         descendents
     }
 
-    pub unsafe fn get_child(&self, ancestors: &[ValueId], id: &ValueId) -> Ref<REValue> {
-        if ancestors.is_empty() {
-            let value = self.child_values.get(id).expect("Value expected to exist");
+    pub unsafe fn get_child(&self, path: &[ValueId]) -> Ref<REValue> {
+        let (first, rest) = path.split_first().unwrap();
+
+        if rest.is_empty() {
+            let value = self.child_values.get(first).expect("Value expected to exist");
             return value.borrow();
         }
 
-        let (first, rest) = ancestors.split_first().unwrap();
         let value = self
             .child_values
             .get(first)
             .unwrap();
         let value = value.try_borrow_unguarded().unwrap();
-        value.get_children_store().unwrap().get_child(rest, id)
+        value.get_children_store().unwrap().get_child(rest)
     }
 
     pub fn get_child_mut(
         &mut self,
-        ancestors: &[ValueId],
-        id: &ValueId,
+        path: &[ValueId],
     ) -> RefMut<REValue> {
-        if ancestors.is_empty() {
+        let (first, rest) = path.split_first().unwrap();
+
+        if rest.is_empty() {
             let value = self
                 .child_values
-                .get_mut(id)
+                .get_mut(first)
                 .expect("Value expected to exist");
             return value.borrow_mut();
         }
 
-        let (first, rest) = ancestors.split_first().unwrap();
         let value = self
             .child_values
             .get_mut(first)
             .unwrap();
         let children_store = value.get_mut().get_children_store_mut().unwrap();
-        children_store.get_child_mut(rest, id)
+        children_store.get_child_mut(rest)
     }
 
     pub fn insert_children(&mut self, values: HashMap<ValueId, REValue>) {

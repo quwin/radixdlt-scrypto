@@ -134,14 +134,12 @@ pub enum REValueLocation {
     OwnedRoot(ValueId),
     Owned {
         root: ValueId,
-        ancestors: Vec<ValueId>,
-        id: ValueId,
+        path: Vec<ValueId>,
     },
     BorrowedRoot(ValueId),
     Borrowed {
         root: ValueId,
-        ancestors: Vec<ValueId>,
-        id: ValueId,
+        path: Vec<ValueId>,
     },
     Track(Address),
 }
@@ -151,30 +149,26 @@ impl REValueLocation {
         match self {
             REValueLocation::OwnedRoot(root) => REValueLocation::Owned {
                 root: root.clone(),
-                ancestors: vec![],
-                id: child_id
+                path: vec![child_id],
             },
-            REValueLocation::Owned { root, ancestors, id } => {
-                let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(id.clone().into());
+            REValueLocation::Owned { root, path: ancestors } => {
+                let mut next_path = ancestors.clone();
+                next_path.push(child_id);
                 REValueLocation::Owned {
                     root: root.clone(),
-                    ancestors: next_ancestors,
-                    id: child_id
+                    path: next_path,
                 }
             }
             REValueLocation::BorrowedRoot(root) => REValueLocation::Borrowed {
                 root: root.clone(),
-                ancestors: vec![],
-                id: child_id
+                path: vec![child_id],
             },
-            REValueLocation::Borrowed { root, ancestors, id } => {
+            REValueLocation::Borrowed { root, path: ancestors } => {
                 let mut next_ancestors = ancestors.clone();
-                next_ancestors.push(id.clone().into());
+                next_ancestors.push(child_id);
                 REValueLocation::Borrowed {
                     root: root.clone(),
-                    ancestors: next_ancestors,
-                    id: child_id
+                    path: next_ancestors,
                 }
             }
             REValueLocation::Track(address) => {
@@ -219,8 +213,7 @@ impl REValueLocation {
             }
             REValueLocation::Owned {
                 root,
-                ref ancestors,
-                id,
+                ref path,
             } => unsafe {
                 let root_value = owned_values
                     .get(&root)
@@ -230,14 +223,14 @@ impl REValueLocation {
                 let children = root_value
                     .get_children_store()
                     .expect("Should have children");
-                children.get_child(ancestors, id)
+                children.get_child(path)
             },
-            REValueLocation::Borrowed { root, ancestors, id } => unsafe {
+            REValueLocation::Borrowed { root, path} => unsafe {
                 let borrowed = borrowed_values.get(root).unwrap();
                 borrowed
                     .get_children_store()
                     .unwrap()
-                    .get_child(ancestors, id)
+                    .get_child(path)
             },
             _ => panic!("Not an owned ref"),
         }
@@ -276,21 +269,20 @@ impl REValueLocation {
             }
             REValueLocation::Owned {
                 root,
-                ref ancestors,
-                id,
+                ref path,
             } => {
                 let root_value = owned_values.get_mut(&root).unwrap().get_mut();
                 let children = root_value
                     .get_children_store_mut()
                     .expect("Should have children");
-                children.get_child_mut(ancestors, id)
+                children.get_child_mut(path)
             }
-            REValueLocation::Borrowed { root, ancestors, id } => {
+            REValueLocation::Borrowed { root, path } => {
                 let borrowed = borrowed_values.get_mut(root).unwrap();
                 borrowed
                     .get_children_store_mut()
                     .unwrap()
-                    .get_child_mut(ancestors, id)
+                    .get_child_mut(path)
             }
             _ => panic!("Not an owned ref"),
         }
