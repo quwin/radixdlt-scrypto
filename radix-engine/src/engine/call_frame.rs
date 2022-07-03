@@ -221,14 +221,11 @@ impl REValueLocation {
                     .unwrap()
                     .try_borrow_unguarded()
                     .unwrap();
-                let children = root_value
-                    .get_children_store()
-                    .expect("Should have children");
-                children.get_child(path)
+                root_value.get_child(path)
             },
             REValueLocation::Borrowed { root, path } => unsafe {
                 let borrowed = borrowed_values.get(root).unwrap();
-                borrowed.get_children_store().unwrap().get_child(path)
+                borrowed.get_child(path)
             },
             _ => panic!("Not an owned ref"),
         }
@@ -263,19 +260,13 @@ impl REValueLocation {
                 let cell = owned_values.get_mut(id).unwrap();
                 cell.borrow_mut()
             }
-            REValueLocation::Owned { root, ref path } => {
+            REValueLocation::Owned { root, ref path } => unsafe {
                 let root_value = owned_values.get_mut(&root).unwrap().get_mut();
-                let children = root_value
-                    .get_children_store_mut()
-                    .expect("Should have children");
-                children.get_child_mut(path)
+                root_value.get_child_mut(path)
             }
-            REValueLocation::Borrowed { root, path } => {
+            REValueLocation::Borrowed { root, path } => unsafe {
                 let borrowed = borrowed_values.get_mut(root).unwrap();
-                borrowed
-                    .get_children_store_mut()
-                    .unwrap()
-                    .get_child_mut(path)
+                borrowed.get_child_mut(path)
             }
             _ => panic!("Not an owned ref"),
         }
@@ -433,9 +424,8 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         to_store: HashMap<AddressPath, REValue>,
     ) {
         match self {
-            REValueRefMut::Owned(owned) => {
-                let children = owned.get_children_store_mut();
-                children.unwrap().insert_children(to_store);
+            REValueRefMut::Owned(owned) => unsafe {
+                owned.insert_children(to_store);
                 owned.kv_store_mut().put(key, value);
             }
             REValueRefMut::Borrowed(..) => {
@@ -544,11 +534,10 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
                 track.write_component_value(address.clone(), value.raw);
                 track.insert_objects(to_store, address.clone());
             }
-            REValueRefMut::Borrowed(owned) => {
+            REValueRefMut::Borrowed(owned) => unsafe {
                 let component = owned.component_mut();
                 component.set_state(value.raw);
-                let children = owned.get_children_store_mut();
-                children.unwrap().insert_children(to_store);
+                owned.insert_children(to_store);
             }
             _ => panic!("Unexpected component ref"),
         }
@@ -927,14 +916,12 @@ where
         // Moved values must have their references removed
         for (id, value) in &taken {
             self.value_refs.remove(id);
-            if let Some(children) = value.get_children_store() {
-                for id in children.all_descendants() {
-                    match id {
-                        AddressPath::ValueId(value_id) => {
-                            self.value_refs.remove(&value_id);
-                        }
-                        AddressPath::Key(..) => {}
+            for id in value.all_descendants() {
+                match id {
+                    AddressPath::ValueId(value_id) => {
+                        self.value_refs.remove(&value_id);
                     }
+                    AddressPath::Key(..) => {}
                 }
             }
         }

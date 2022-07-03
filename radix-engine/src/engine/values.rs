@@ -2,6 +2,7 @@ use sbor::rust::cell::{Ref, RefCell, RefMut};
 use sbor::rust::collections::hash_map::IntoIter;
 use sbor::rust::collections::*;
 use sbor::rust::vec::Vec;
+use sbor::rust::vec;
 use scrypto::engine::types::*;
 use scrypto::values::ScryptoValue;
 
@@ -104,7 +105,7 @@ impl REValue {
         }
     }
 
-    pub fn get_children_store(&self) -> Option<&InMemoryChildren> {
+    pub fn all_descendants(&self) -> Vec<AddressPath> {
         match self {
             REValue::KeyValueStore {
                 store: _,
@@ -113,13 +114,13 @@ impl REValue {
             | REValue::Component {
                 component: _,
                 child_values,
-            } => Some(child_values),
-            _ => None,
+            } => child_values.all_descendants(),
+            _ => vec![],
         }
     }
 
-    pub fn get_children_store_mut(&mut self) -> Option<&mut InMemoryChildren> {
-        match self {
+    pub unsafe fn get_child(&self, path: &[AddressPath]) -> Ref<REValue> {
+        let children_store = match self {
             REValue::KeyValueStore {
                 store: _,
                 child_values,
@@ -127,9 +128,40 @@ impl REValue {
             | REValue::Component {
                 component: _,
                 child_values,
-            } => Some(child_values),
-            _ => None,
-        }
+            } => child_values,
+            _ => panic!("Unexpected"),
+        };
+        children_store.get_child(path)
+    }
+
+    pub unsafe fn get_child_mut(&mut self, path: &[AddressPath]) -> RefMut<REValue> {
+        let children_store = match self {
+            REValue::KeyValueStore {
+                store: _,
+                child_values,
+            }
+            | REValue::Component {
+                component: _,
+                child_values,
+            } => child_values,
+            _ => panic!("Unexpected"),
+        };
+        children_store.get_child_mut(path)
+    }
+
+    pub unsafe fn insert_children(&mut self, values: HashMap<AddressPath, REValue>) {
+        let children_store = match self {
+            REValue::KeyValueStore {
+                store: _,
+                child_values,
+            }
+            | REValue::Component {
+                component: _,
+                child_values,
+            } => child_values,
+            _ => panic!("Unexpected"),
+        };
+        children_store.insert_children(values);
     }
 
     pub fn verify_can_move(&self) -> Result<(), RuntimeError> {
@@ -358,9 +390,7 @@ impl InMemoryChildren {
         for (id, value) in self.child_values.iter() {
             descendents.push(id.clone());
             let value = value.borrow();
-            if let Some(children_store) = value.get_children_store() {
-                descendents.extend(children_store.all_descendants());
-            }
+            descendents.extend(value.all_descendants());
         }
         descendents
     }
@@ -378,10 +408,10 @@ impl InMemoryChildren {
 
         let value = self.child_values.get(first).unwrap();
         let value = value.try_borrow_unguarded().unwrap();
-        value.get_children_store().unwrap().get_child(rest)
+        value.get_child(rest)
     }
 
-    pub fn get_child_mut(&mut self, path: &[AddressPath]) -> RefMut<REValue> {
+    pub unsafe fn get_child_mut(&mut self, path: &[AddressPath]) -> RefMut<REValue> {
         let (first, rest) = path.split_first().unwrap();
 
         if rest.is_empty() {
@@ -393,8 +423,7 @@ impl InMemoryChildren {
         }
 
         let value = self.child_values.get_mut(first).unwrap();
-        let children_store = value.get_mut().get_children_store_mut().unwrap();
-        children_store.get_child_mut(rest)
+        value.get_mut().get_child_mut(rest)
     }
 
     pub fn insert_children(&mut self, values: HashMap<AddressPath, REValue>) {
