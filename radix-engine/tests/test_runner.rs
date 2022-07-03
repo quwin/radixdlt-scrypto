@@ -1,4 +1,4 @@
-use radix_engine::engine::{Address, Receipt, TransactionExecutor};
+use radix_engine::engine::{Address, AddressPath, Receipt, TransactionExecutor};
 use radix_engine::ledger::*;
 use radix_engine::model::{export_abi, export_abi_by_component, extract_package};
 use radix_engine::wasm::{DefaultWasmEngine, WasmInstrumenter};
@@ -122,7 +122,7 @@ impl TestRunner {
         let value = ScryptoValue::from_slice(component.state()).unwrap();
         let kv_store_id = value.kv_store_ids.iter().nth(0).expect("Account should have a kv store");
 
-        let key_address = address.child(ValueId::KeyValueStore(kv_store_id.clone()));
+        let key_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id.clone())));
         let mut key_address_bytes = key_address.encode();
         key_address_bytes.extend(scrypto_encode(&resource_address));
         let key_entry = self.inspect_store().get_substate(&key_address_bytes).expect("Key Entry should exist");
@@ -130,7 +130,7 @@ impl TestRunner {
         let entry_value = ScryptoValue::from_slice(&entry.unwrap()).unwrap();
         let vault_id = entry_value.vault_ids.iter().nth(0).expect("Entry should have a vault");
 
-        let vault_address = key_address.child(ValueId::Vault(vault_id.clone()));
+        let vault_address = key_address.child(AddressPath::ValueId(ValueId::Vault(vault_id.clone())));
         let vault_substate = self.inspect_store().get_substate(&vault_address.encode()).expect("Vault should exist");
         let vault: radix_engine::model::Vault = scrypto_decode(&vault_substate.value).unwrap();
         vault

@@ -168,7 +168,7 @@ impl Address {
         }
     }
 
-    pub fn child(&self, child_id: ValueId) -> Address {
+    pub fn child(&self, child_id: AddressPath) -> Address {
         let next_ancestors = match self {
             Address::KeyValueStore(ancestors, kv_store_id) => {
                 let mut next_ancestors = ancestors.clone();
@@ -185,9 +185,9 @@ impl Address {
         };
 
         match child_id {
-            ValueId::KeyValueStore(kv_store_id) => Address::KeyValueStore(next_ancestors, kv_store_id),
-            ValueId::Vault(vault_id) => Address::Vault(next_ancestors, vault_id),
-            ValueId::Component(component_id) => Address::LocalComponent(next_ancestors, component_id),
+            AddressPath::ValueId(ValueId::KeyValueStore(kv_store_id)) => Address::KeyValueStore(next_ancestors, kv_store_id),
+            AddressPath::ValueId(ValueId::Vault(vault_id)) => Address::Vault(next_ancestors, vault_id),
+            AddressPath::ValueId(ValueId::Component(component_id)) => Address::LocalComponent(next_ancestors, component_id),
             _ => panic!("Unexpected"),
         }
     }
@@ -755,7 +755,7 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
 
     pub fn insert_objects(
         &mut self,
-        values: HashMap<ValueId, REValue>,
+        values: HashMap<AddressPath, REValue>,
         address: Address,
     ) {
         for (id, value) in values {

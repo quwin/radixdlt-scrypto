@@ -134,18 +134,18 @@ pub enum REValueLocation {
     OwnedRoot(ValueId),
     Owned {
         root: ValueId,
-        path: Vec<ValueId>,
+        path: Vec<AddressPath>,
     },
     BorrowedRoot(ValueId),
     Borrowed {
         root: ValueId,
-        path: Vec<ValueId>,
+        path: Vec<AddressPath>,
     },
     Track(Address),
 }
 
 impl REValueLocation {
-    fn child(&self, child_id: ValueId) -> REValueLocation {
+    fn child(&self, child_id: AddressPath) -> REValueLocation {
         match self {
             REValueLocation::OwnedRoot(root) => REValueLocation::Owned {
                 root: root.clone(),
@@ -439,7 +439,7 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         &mut self,
         key: Vec<u8>,
         value: ScryptoValue,
-        to_store: HashMap<ValueId, REValue>,
+        to_store: HashMap<AddressPath, REValue>,
     ) {
         match self {
             REValueRefMut::Owned(owned) => {
@@ -547,7 +547,7 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         }
     }
 
-    fn component_put(&mut self, value: ScryptoValue, to_store: HashMap<ValueId, REValue>) {
+    fn component_put(&mut self, value: ScryptoValue, to_store: HashMap<AddressPath, REValue>) {
         match self {
             REValueRefMut::Track(track, address) => {
                 track.write_component_value(address.clone(), value.raw);
@@ -938,7 +938,11 @@ where
             self.value_refs.remove(id);
             if let Some(children) = value.get_children_store() {
                 for id in children.all_descendants() {
-                    self.value_refs.remove(&id);
+                    match id {
+                        AddressPath::ValueId(value_id) => {
+                            self.value_refs.remove(&value_id);
+                        }
+                    }
                 }
             }
         }
@@ -1876,7 +1880,7 @@ where
         let (parent_location, current_value) = self.read_value_internal(&address)?;
         let cur_children = current_value.value_ids();
         for child_id in cur_children {
-            let child_location = parent_location.child(child_id);
+            let child_location = parent_location.child(AddressPath::ValueId(child_id));
 
             // Extend current readable space when kv stores are found
             let visible = matches!(child_id, ValueId::KeyValueStore(..));
@@ -1923,6 +1927,10 @@ where
         // TODO: verify against some schema
 
         // Write values
+        let mut pathed_values = HashMap::new();
+        for (id, value) in taken_values {
+            pathed_values.insert(AddressPath::ValueId(id), value);
+        }
         let mut value_ref = location.to_ref_mut(
             &mut self.owned_values,
             &mut self.frame_borrowed_values,
@@ -1930,13 +1938,13 @@ where
         );
         match address {
             SubstateAddress::Component(.., offset) => match offset {
-                ComponentOffset::State => value_ref.component_put(value, taken_values),
+                ComponentOffset::State => value_ref.component_put(value, pathed_values),
                 ComponentOffset::Info => {
                     return Err(RuntimeError::InvalidDataWrite);
                 }
             },
             SubstateAddress::KeyValueEntry(.., key) => {
-                value_ref.kv_store_put(key.raw, value, taken_values);
+                value_ref.kv_store_put(key.raw, value, pathed_values);
             }
             SubstateAddress::NonFungible(.., id) => value_ref.non_fungible_put(id, value),
         }
