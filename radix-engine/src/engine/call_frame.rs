@@ -424,9 +424,8 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         to_store: HashMap<AddressPath, REValue>,
     ) {
         match self {
-            REValueRefMut::Owned(owned) => unsafe {
-                owned.insert_children(to_store);
-                owned.kv_store_mut().put(key, value);
+            REValueRefMut::Owned(owned) => {
+                owned.kv_store_mut().put(key, value, to_store);
             }
             REValueRefMut::Borrowed(..) => {
                 panic!("Not supported");
@@ -434,11 +433,12 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
             REValueRefMut::Track(track, address) => {
                 track.set_key_value(
                     address.clone(),
-                    key,
+                    key.clone(),
                     SubstateValue::KeyValueStoreEntry(Some(value.raw)),
                 );
 
-                track.insert_objects(to_store, address.clone());
+                let entry_address = address.child(AddressPath::Key(key));
+                track.insert_objects(to_store, entry_address);
             }
         }
     }
@@ -447,7 +447,7 @@ impl<'a, 'b, 'c, 's, S: ReadableSubstateStore> REValueRefMut<'a, 'b, 'c, 's, S> 
         let maybe_value = match self {
             REValueRefMut::Owned(owned) => {
                 let store = owned.kv_store_mut();
-                store.get(key).map(|v| v.dom)
+                store.get(key).map(|(v, _children) | v.dom.clone())
             }
             REValueRefMut::Borrowed(..) => {
                 panic!("Not supported");
@@ -1488,7 +1488,7 @@ where
                         REValueLocation::Track(address) => {
                             self.track
                                 .take_lock(address.clone(), true)
-                                .expect("Should never fail.");
+                                .expect(&format!("Should never fail {:?}", address.clone()));
                             locked_values.insert(address.clone().into());
                             REValueLocation::Track(address)
                         }
@@ -1867,8 +1867,19 @@ where
     fn read_value_data(&mut self, address: SubstateAddress) -> Result<ScryptoValue, RuntimeError> {
         let (parent_location, current_value) = self.read_value_internal(&address)?;
         let cur_children = current_value.value_ids();
+
         for child_id in cur_children {
-            let child_location = parent_location.child(AddressPath::ValueId(child_id));
+            let child_location = match &address {
+                SubstateAddress::Component(..)
+                | SubstateAddress::NonFungible(..) => {
+                    parent_location.child(AddressPath::ValueId(child_id))
+                },
+                SubstateAddress::KeyValueEntry(.., key) => {
+                    parent_location
+                        .child(AddressPath::Key(key.raw.clone()))
+                        .child(AddressPath::ValueId(child_id))
+                }
+            };
 
             // Extend current readable space when kv stores are found
             let visible = matches!(child_id, ValueId::KeyValueStore(..));

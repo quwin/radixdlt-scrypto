@@ -133,14 +133,13 @@ impl TestRunner {
             .nth(0)
             .expect("Account should have a kv store");
 
-        let key_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(
+        let kv_store_address = address.child(AddressPath::ValueId(ValueId::KeyValueStore(
             kv_store_id.clone(),
         )));
-        let mut key_address_bytes = key_address.encode();
-        key_address_bytes.extend(scrypto_encode(&resource_address));
+        let entry_address = kv_store_address.child(AddressPath::Key(scrypto_encode(&resource_address)));
         let key_entry = self
             .inspect_store()
-            .get_substate(&key_address_bytes)
+            .get_substate(&entry_address.encode())
             .expect("Key Entry should exist");
         let entry: Option<Vec<u8>> = scrypto_decode(&key_entry.value).unwrap();
         let entry_value = ScryptoValue::from_slice(&entry.unwrap()).unwrap();
@@ -151,7 +150,7 @@ impl TestRunner {
             .expect("Entry should have a vault");
 
         let vault_address =
-            key_address.child(AddressPath::ValueId(ValueId::Vault(vault_id.clone())));
+            entry_address.child(AddressPath::ValueId(ValueId::Vault(vault_id.clone())));
         let vault_substate = self
             .inspect_store()
             .get_substate(&vault_address.encode())

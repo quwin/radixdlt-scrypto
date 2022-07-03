@@ -802,16 +802,16 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
                 }
                 REValue::KeyValueStore(store) => {
                     self.create_key_space_2(child_address.clone());
-                    for (k, v) in store.store {
-                        self.set_key_value(child_address.clone(), k, Some(v));
-                    }
+                    for (k, (v, children)) in store.store {
+                        self.set_key_value(child_address.clone(), k.clone(), Some(v.clone()));
 
-                    // TODO: Move child values with entry as parent rather than the store
-                    let child_values = store.children
-                        .into_iter()
-                        .map(|(id, v)| (id, v.into_inner()))
-                        .collect();
-                    self.insert_objects(child_values, child_address);
+                        let entry_address = child_address.child(AddressPath::Key(k.clone()));
+                        let child_values = children
+                            .into_iter()
+                            .map(|(id, v)| (id, v.into_inner()))
+                            .collect();
+                        self.insert_objects(child_values, entry_address);
+                    }
                 }
                 _ => panic!("Invalid value being persisted: {:?}", value),
             }

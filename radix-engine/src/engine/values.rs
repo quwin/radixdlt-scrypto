@@ -137,7 +137,6 @@ impl REValue {
 
     pub unsafe fn insert_children(&mut self, values: HashMap<AddressPath, REValue>) {
         match self {
-            REValue::KeyValueStore(store) => store.children.insert_children(values),
             REValue::Component {
                 component: _,
                 child_values,
