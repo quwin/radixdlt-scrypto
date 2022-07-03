@@ -14,10 +14,7 @@ pub enum REValue {
     Bucket(Bucket),
     Proof(Proof),
     Vault(Vault),
-    KeyValueStore {
-        store: PreCommittedKeyValueStore,
-        child_values: InMemoryChildren,
-    },
+    KeyValueStore(PreCommittedKeyValueStore),
     Component {
         component: Component,
         child_values: InMemoryChildren,
@@ -79,14 +76,14 @@ impl REValue {
 
     pub fn kv_store(&self) -> &PreCommittedKeyValueStore {
         match self {
-            REValue::KeyValueStore { store, .. } => store,
+            REValue::KeyValueStore(store) => store,
             _ => panic!("Expected to be a store"),
         }
     }
 
     pub fn kv_store_mut(&mut self) -> &mut PreCommittedKeyValueStore {
         match self {
-            REValue::KeyValueStore { store, .. } => store,
+            REValue::KeyValueStore(store) => store,
             _ => panic!("Expected to be a store"),
         }
     }
@@ -107,11 +104,8 @@ impl REValue {
 
     pub fn all_descendants(&self) -> Vec<AddressPath> {
         match self {
-            REValue::KeyValueStore {
-                store: _,
-                child_values,
-            }
-            | REValue::Component {
+            REValue::KeyValueStore(store) => store.all_descendants(),
+            REValue::Component {
                 component: _,
                 child_values,
             } => child_values.all_descendants(),
@@ -120,48 +114,36 @@ impl REValue {
     }
 
     pub unsafe fn get_child(&self, path: &[AddressPath]) -> Ref<REValue> {
-        let children_store = match self {
-            REValue::KeyValueStore {
-                store: _,
-                child_values,
-            }
-            | REValue::Component {
+        match self {
+            REValue::KeyValueStore(store) => store.get_child(path),
+            REValue::Component {
                 component: _,
                 child_values,
-            } => child_values,
+            } => child_values.get_child(path),
             _ => panic!("Unexpected"),
-        };
-        children_store.get_child(path)
+        }
     }
 
     pub unsafe fn get_child_mut(&mut self, path: &[AddressPath]) -> RefMut<REValue> {
-        let children_store = match self {
-            REValue::KeyValueStore {
-                store: _,
-                child_values,
-            }
-            | REValue::Component {
+        match self {
+            REValue::KeyValueStore(store) => store.get_child_mut(path),
+            REValue::Component {
                 component: _,
                 child_values,
-            } => child_values,
+            } => child_values.get_child_mut(path),
             _ => panic!("Unexpected"),
-        };
-        children_store.get_child_mut(path)
+        }
     }
 
     pub unsafe fn insert_children(&mut self, values: HashMap<AddressPath, REValue>) {
-        let children_store = match self {
-            REValue::KeyValueStore {
-                store: _,
-                child_values,
-            }
-            | REValue::Component {
+        match self {
+            REValue::KeyValueStore(store) => store.children.insert_children(values),
+            REValue::Component {
                 component: _,
                 child_values,
-            } => child_values,
+            } => child_values.insert_children(values),
             _ => panic!("Unexpected"),
-        };
-        children_store.insert_children(values);
+        }
     }
 
     pub fn verify_can_move(&self) -> Result<(), RuntimeError> {
@@ -304,10 +286,7 @@ impl Into<REValue> for REPrimitiveValue {
             REPrimitiveValue::Package(package) => REValue::Package(package),
             REPrimitiveValue::Bucket(bucket) => REValue::Bucket(bucket),
             REPrimitiveValue::Proof(proof) => REValue::Proof(proof),
-            REPrimitiveValue::KeyValue(store) => REValue::KeyValueStore {
-                store: store,
-                child_values: InMemoryChildren::new(),
-            },
+            REPrimitiveValue::KeyValue(store) => REValue::KeyValueStore(store),
             REPrimitiveValue::Vault(vault) => REValue::Vault(vault),
         }
     }
