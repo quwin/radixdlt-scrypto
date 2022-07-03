@@ -7,6 +7,7 @@ use scrypto::buffer::{scrypto_decode, scrypto_encode};
 use scrypto::engine::types::*;
 use scrypto::values::*;
 use std::collections::VecDeque;
+use radix_engine::engine::Address;
 
 use crate::utils::*;
 
@@ -83,19 +84,14 @@ pub fn dump_component<T: ReadableSubstateStore + QueryableSubstateStore, O: std:
             writeln!(output, "{}: {}", "State".green().bold(), state_data);
 
             // Find all vaults owned by the component, assuming a tree structure.
-            let mut vaults_found: HashSet<VaultId> = state_data.vault_ids.iter().cloned().collect();
-            let mut queue: VecDeque<KeyValueStoreId> =
-                state_data.kv_store_ids.iter().cloned().collect();
-            while !queue.is_empty() {
-                let kv_store_id = queue.pop_front().unwrap();
-                let (maps, vaults) =
-                    dump_kv_store(component_address, &kv_store_id, substate_store, output)?;
-                queue.extend(maps);
-                vaults_found.extend(vaults);
-            }
+            let vaults_addresses = state_data.vault_ids.iter().cloned()
+                .map(|v| Address::Vault(vec![ValueId::Component(component_address)], v))
+                .collect();
+
+            // TODO: recursively get vaules within component
 
             // Dump resources
-            dump_resources(component_address, &vaults_found, substate_store, output)
+            dump_resources(vaults_addresses, substate_store, output)
         }
         None => Err(DisplayError::ComponentNotFound),
     }
@@ -109,7 +105,8 @@ fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::
 ) -> Result<(Vec<KeyValueStoreId>, Vec<VaultId>), DisplayError> {
     let mut referenced_maps = Vec::new();
     let mut referenced_vaults = Vec::new();
-    let map = substate_store.get_kv_store_entries(component_address, kv_store_id);
+    let address = Address::KeyValueStore(vec![ValueId::Component(component_address)], kv_store_id.clone());
+    let substates = substate_store.get_substates(&address.encode());
     writeln!(
         output,
         "{}: {:?}{:?}",
@@ -117,30 +114,30 @@ fn dump_kv_store<T: ReadableSubstateStore + QueryableSubstateStore, O: std::io::
         component_address,
         kv_store_id
     );
-    for (last, (k, v)) in map.iter().identify_last() {
+    for (last, (k, v)) in substates.iter().identify_last() {
         let key = ScryptoValue::from_slice(k).unwrap();
-        let value_wrapper: Option<Vec<u8>> = scrypto_decode(v).unwrap();
-        if let Some(v) = value_wrapper {
-            let value = ScryptoValue::from_slice(&v).unwrap();
-            writeln!(output, "{} {} => {}", list_item_prefix(last), key, value);
-            referenced_maps.extend(value.kv_store_ids);
-            referenced_vaults.extend(value.vault_ids);
+        // TODO: cleanup
+        let maybe_value_wrapper: Result<Option<Vec<u8>>, DecodeError> = scrypto_decode(v);
+        if let Ok(value_wrapper) = maybe_value_wrapper {
+            if let Some(v) = value_wrapper {
+                let value = ScryptoValue::from_slice(&v).unwrap();
+                writeln!(output, "{} {} => {}", list_item_prefix(last), key, value);
+                referenced_maps.extend(value.kv_store_ids);
+                referenced_vaults.extend(value.vault_ids);
+            }
         }
     }
     Ok((referenced_maps, referenced_vaults))
 }
 
 fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
-    component_address: ComponentAddress,
-    vaults: &HashSet<VaultId>,
+    vault_addresses: HashSet<Address>,
     substate_store: &T,
     output: &mut O,
 ) -> Result<(), DisplayError> {
     writeln!(output, "{}:", "Resources".green().bold());
-    for (last, vault_id) in vaults.iter().identify_last() {
-        let mut vault_address = scrypto_encode(&component_address);
-        vault_address.extend(scrypto_encode(vault_id));
-        let substate = substate_store.get_substate(&vault_address).unwrap();
+    for (last, vault_address) in vault_addresses.iter().identify_last() {
+        let substate = substate_store.get_substate(&vault_address.encode()).unwrap();
         let vault: Vault = scrypto_decode(&substate.value).unwrap();
         let amount = vault.total_amount();
         let resource_address = vault.resource_address();

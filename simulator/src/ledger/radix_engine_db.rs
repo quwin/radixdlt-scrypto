@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use radix_engine::ledger::*;
@@ -67,33 +66,6 @@ impl RadixEngineDB {
     }
 }
 
-impl QueryableSubstateStore for RadixEngineDB {
-    fn get_kv_store_entries(
-        &self,
-        component_address: ComponentAddress,
-        kv_store_id: &KeyValueStoreId,
-    ) -> HashMap<Vec<u8>, Vec<u8>> {
-        let mut id = scrypto_encode(&component_address);
-        id.extend(scrypto_encode(kv_store_id));
-        let key_size = id.len();
-
-        let mut iter = self
-            .db
-            .iterator(IteratorMode::From(&id, Direction::Forward));
-        iter.next(); // Key Value Store
-        let mut items = HashMap::new();
-        while let Some((key, value)) = iter.next() {
-            if !key.starts_with(&id) {
-                break;
-            }
-
-            let local_key = key.split_at(key_size).1.to_vec();
-            let substate: Substate = scrypto_decode(&value.to_vec()).unwrap();
-            items.insert(local_key, substate.value);
-        }
-        items
-    }
-}
 
 impl ReadableSubstateStore for RadixEngineDB {
     fn get_substate(&self, address: &[u8]) -> Option<Substate> {
@@ -125,5 +97,29 @@ impl WriteableSubstateStore for RadixEngineDB {
         let id = scrypto_encode(&"epoch");
         let value = scrypto_encode(&epoch);
         self.write(&id, &value)
+    }
+}
+
+impl QueryableSubstateStore for RadixEngineDB {
+    fn get_substates(
+        &self,
+        address: &[u8],
+    ) -> Vec<(Vec<u8>, Vec<u8>)> {
+        let key_size = address.len();
+        let mut iter = self
+            .db
+            .iterator(IteratorMode::From(address, Direction::Forward));
+        iter.next(); // Key Value Store
+        let mut items = Vec::new();
+        while let Some((key, value)) = iter.next() {
+            if !key.starts_with(address) {
+                break;
+            }
+
+            let local_key = key.split_at(key_size).1.to_vec();
+            let substate: Substate = scrypto_decode(&value.to_vec()).unwrap();
+            items.push((local_key, substate.value));
+        }
+        items
     }
 }

@@ -25,6 +25,14 @@ fn can_withdraw_from_my_account() {
 
     // Assert
     receipt.expect_success();
+
+    let vault = test_runner.inspect_account_vault(account.into(), RADIX_TOKEN);
+    assert_eq!(vault.resource_address(), RADIX_TOKEN);
+    assert!(vault.is_empty());
+
+    let other_vault = test_runner.inspect_account_vault(other_account.into(), RADIX_TOKEN);
+    assert_eq!(other_vault.resource_address(), RADIX_TOKEN);
+    assert!(!other_vault.is_empty());
 }
 
 #[test]

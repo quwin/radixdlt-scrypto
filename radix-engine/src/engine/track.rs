@@ -120,7 +120,7 @@ macro_rules! resource_to_non_fungible_space {
 }
 
 impl Address {
-    fn encode(&self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         match self {
             Address::Resource(resource_address) => scrypto_encode(resource_address),
             Address::GlobalComponent(component_address) => scrypto_encode(component_address),

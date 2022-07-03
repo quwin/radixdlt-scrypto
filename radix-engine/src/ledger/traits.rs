@@ -1,17 +1,7 @@
-use sbor::rust::collections::*;
 use sbor::rust::vec::Vec;
 use sbor::*;
 use scrypto::buffer::*;
 use scrypto::crypto::*;
-use scrypto::engine::types::*;
-
-pub trait QueryableSubstateStore {
-    fn get_kv_store_entries(
-        &self,
-        component_address: ComponentAddress,
-        kv_store_id: &KeyValueStoreId,
-    ) -> HashMap<Vec<u8>, Vec<u8>>;
-}
 
 #[derive(Debug, Clone, Hash, TypeId, Encode, Decode, PartialEq, Eq)]
 pub struct PhysicalSubstateId(pub Hash, pub u32);
@@ -60,4 +50,11 @@ pub trait WriteableSubstateStore {
     fn put_substate(&mut self, address: &[u8], substate: Substate);
     fn put_space(&mut self, address: &[u8], phys_id: PhysicalSubstateId);
     fn set_epoch(&mut self, epoch: u64);
+}
+
+pub trait QueryableSubstateStore {
+    fn get_substates(
+        &self,
+        address: &[u8],
+    ) -> Vec<(Vec<u8>, Vec<u8>)>;
 }
