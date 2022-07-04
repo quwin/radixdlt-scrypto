@@ -465,23 +465,7 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
         self.up_substates.insert(address.encode(), value.into());
     }
 
-    // TODO: Make more generic
-    pub fn create_non_fungible_space(&mut self, resource_address: ResourceAddress) {
-        let space_address = resource_to_non_fungible_space!(resource_address);
-        self.up_virtual_substate_space.insert(space_address);
-    }
-
-    pub fn create_key_space(
-        &mut self,
-        component_address: ComponentAddress,
-        kv_store_id: KeyValueStoreId,
-    ) {
-        let mut space_address = scrypto_encode(&component_address);
-        space_address.extend(scrypto_encode(&kv_store_id));
-        self.up_virtual_substate_space.insert(space_address);
-    }
-
-    pub fn create_key_space_2(&mut self, address: Address) {
+    pub fn create_key_space(&mut self, address: Address) {
         self.up_virtual_substate_space.insert(address.encode());
     }
 
@@ -801,7 +785,7 @@ impl<'s, S: ReadableSubstateStore> Track<'s, S> {
                     self.insert_objects(child_values, child_address);
                 }
                 REValue::KeyValueStore(store) => {
-                    self.create_key_space_2(child_address.clone());
+                    self.create_key_space(child_address.clone());
                     for (k, (v, children)) in store.store {
                         self.set_key_value(child_address.clone(), k.clone(), Some(v.clone()));
 

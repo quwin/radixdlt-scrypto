@@ -1822,9 +1822,8 @@ where
 
         if let Some(non_fungibles) = maybe_non_fungibles {
             let resource_address: ResourceAddress = address.clone().into();
-            self.track
-                .create_non_fungible_space(resource_address.clone());
             let parent_address = Address::NonFungibleSet(resource_address.clone());
+            self.track.create_key_space(parent_address.clone());
             for (id, non_fungible) in non_fungibles {
                 self.track.set_key_value(
                     parent_address.clone(),
