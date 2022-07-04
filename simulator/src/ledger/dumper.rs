@@ -210,7 +210,7 @@ fn dump_resources<T: ReadableSubstateStore, O: std::io::Write>(
                     scrypto_decode(&substate_store.get_substate(&nf_address).unwrap().value)
                         .unwrap();
 
-                let id = ScryptoValue::from_slice(&id.0).unwrap();
+                let id = ScryptoValue::from_slice(&id.to_vec()).unwrap();
 
                 if let Some(non_fungible) = non_fungible {
                     let immutable_data =
